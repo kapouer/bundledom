@@ -23,5 +23,13 @@
   "bugs": {
     "url": "https://github.com/kapouer/bundledom/issues"
   },
-  "homepage": "https://github.com/kapouer/bundledom#readme"
+  "homepage": "https://github.com/kapouer/bundledom#readme",
+  "dependencies": {
+    "autoprefixer-core": "^6.0.1",
+    "csswring": "^5.0.0",
+    "jsdom": "^9.2.1",
+    "postcss": "^5.0.21",
+    "postcss-url": "^5.1.2",
+    "uglify-js": "^2.6.2"
+  }
 }
