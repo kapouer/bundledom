@@ -12,14 +12,14 @@ var parser = dash.createParser({options: [
 		help: 'Print this help and exit.'
 	},
 	{
+		names: ['serialize'],
+		type: 'string',
+		help: 'serialize modified DOM to file'
+	},
+	{
 		names: ['prepend'],
 		type: 'arrayOfString',
 		help: 'prepend script(s) or link(s)'
-	},
-	{
-		names: ['append'],
-		type: 'arrayOfString',
-		help: 'append script(s) or link(s)'
 	},
 	{
 		names: ['exclude'],
@@ -46,7 +46,7 @@ if (opts.help || !require('fs').existsSync(htmlPath)) {
 
 var bundledom = require('..');
 
-bundledom(htmlPath).then(function(str) {
+bundledom(htmlPath, opts).then(function(str) {
 	console.log(str);
 }).catch(function(err) {
 	console.error(err);
