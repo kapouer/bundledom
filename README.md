@@ -18,9 +18,15 @@ bundledom
 --serialize index.prod.html
 --output /js/index.bundle.js
 --exclude jquery.js 
---prepend 'HTMLImports.js'
+--prepend '/js/HTMLImports.js'
 public/index.html
 ```
+
+Help
+----
+
+`bundledom --help`
+
 
 License
 -------
