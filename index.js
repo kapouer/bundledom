@@ -13,6 +13,11 @@ var URL = require('url');
 module.exports = bundledom;
 
 function bundledom(path, opts) {
+	opts = Object.assign({
+		prepend: [],
+		append: [],
+		exclude: []
+	}, opts);
 	var output;
 	return loadDom(path).then(function(doc) {
 		return processScripts(doc, opts).then(function(js) {
@@ -35,9 +40,43 @@ function bundledom(path, opts) {
 			return doc;
 		});
 	}).then(function(doc) {
-		if (opts.serialize) fs.writeFileSync(opts.serialize, doc.documentElement.outerHTML);
-		return output;
+		var p = Promise.resolve(output);
+		if (opts.serialize) {
+			p = p.then(function() {
+				var serializePath = getRelativePath(doc, opts.serialize);
+				return new Promise(function(resolve, reject) {
+					fs.writeFile(serializePath, doc.documentElement.outerHTML, function(err) {
+						if (err) reject(err);
+						else {
+							if (opts.cli) console.warn("Serialize", serializePath);
+							resolve();
+						}
+					});
+				});
+			});
+		}
+		if (opts.output) {
+			p = p.then(function() {
+				return new Promise(function(resolve, reject) {
+					var outputPath = getRelativePath(doc, opts.output);
+					fs.writeFile(outputPath, output, function(err) {
+						if (err) reject(err);
+						else {
+							if (opts.cli) console.warn("Output", outputPath);
+							resolve();
+						}
+					});
+				});
+			});
+		}
+		return p;
 	});
+}
+
+function getRelativePath(doc, path) {
+	var dir = Path.dirname(URL.parse(doc.baseURI).pathname);
+	if (path) return Path.join(dir, path);
+	else return dir;
 }
 
 function processImports(doc, opts) {
@@ -112,11 +151,17 @@ function processImports(doc, opts) {
 }
 
 function processScripts(doc, opts) {
-	var docRoot = Path.dirname(URL.parse(doc.baseURI).pathname);
+	var docRoot = getRelativePath(doc);
 	var astRoot;
-	prependList(doc.query('head > script[src]'), opts.prepend, 'script', 'src', 'js');
+	if (opts.output) {
+		opts.append.unshift(opts.output);
+		opts.exclude.unshift(opts.output);
+	}
+	var allScripts = doc.queryAll('head > script[src]');
+	prependToPivot(allScripts, opts.prepend, 'script', 'src', 'js');
+	appendToPivot(allScripts, opts.append, 'script', 'src', 'js');
 
-	return Promise.all(doc.queryAll('head > script[src]').map(function(node) {
+	return Promise.all(allScripts.map(function(node) {
 		var src = node.getAttribute('src');
 		if (exclude(src, opts.exclude)) return;
 		removeNodeSpace(node);
@@ -169,7 +214,7 @@ function exclude(src, list) {
 	var found = list.some(function(str) {
 		return ~src.indexOf(str);
 	});
-	if (found) console.warn('Excluded:', src);
+	if (found) debug("excluded", src);
 	return found;
 }
 
@@ -200,7 +245,8 @@ function spaceBefore(node) {
 	return node.ownerDocument.createTextNode(str);
 }
 
-function prependList(pivot, list, tag, att, ext) {
+function prependToPivot(scripts, list, tag, att, ext) {
+	var pivot = scripts[0];
 	if (!pivot) {
 		console.error("Cannot prepend before no node", tag, att, ext);
 		return;
@@ -211,7 +257,28 @@ function prependList(pivot, list, tag, att, ext) {
 		node[att] = src;
 		pivot.before(node);
 		pivot.before(textNode.cloneNode());
+		scripts.unshift(node);
+		debug("prepended", tag, att, src);
 	});
+}
+
+function appendToPivot(scripts, list, tag, att, ext) {
+	var pivot = scripts.slice(-1)[0];
+	if (!pivot) {
+		console.error("Cannot append after no node", tag, att, ext);
+		return;
+	}
+	var textNode = spaceBefore(pivot);
+	list = filterByExt(list, ext);
+	while (list.length) {
+		var src = list.pop();
+		var node = pivot.ownerDocument.createElement(tag);
+		node[att] = src;
+		pivot.after(node);
+		pivot.after(textNode.cloneNode());
+		scripts.push(node);
+		debug("appended", tag, att, src);
+	}
 }
 
 function loadDom(path) {

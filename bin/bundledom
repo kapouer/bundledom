@@ -19,12 +19,22 @@ var parser = dash.createParser({options: [
 	{
 		names: ['prepend'],
 		type: 'arrayOfString',
-		help: 'prepend script(s) or link(s)'
+		help: 'prepend scripts'
+	},
+	{
+		names: ['append'],
+		type: 'arrayOfString',
+		help: 'append scripts'
 	},
 	{
 		names: ['exclude'],
 		type: 'arrayOfString',
-		help: 'exclude script(s) or link(s)'
+		help: 'exclude scripts, links, imports'
+	},
+	{
+		names: ['output'],
+		type: 'string',
+		help: 'bundle output file name'
 	}
 ]});
 
@@ -46,8 +56,10 @@ if (opts.help || !require('fs').existsSync(htmlPath)) {
 
 var bundledom = require('..');
 
+opts.cli = true;
+
 bundledom(htmlPath, opts).then(function(str) {
-	console.log(str);
+	if (!opts.output) console.log(str);
 }).catch(function(err) {
 	console.error(err);
 	process.exit(1);

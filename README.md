@@ -15,10 +15,11 @@ Usage
 From command-line:
 ```
 bundledom 
---serialize public/index.prod.html 
+--serialize index.prod.html
+--output /js/index.bundle.js
 --exclude jquery.js 
---prepend 'js/HTMLImports.js'
-public/index.html > public/index.bundle.js
+--prepend 'HTMLImports.js'
+public/index.html
 ```
 
 License
