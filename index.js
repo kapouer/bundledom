@@ -137,12 +137,9 @@ function processImports(doc, opts) {
 				}.toString().replace('SCRIPT', textScript)
 				+ ')(' + JSON.stringify(html.replace(/[\t\n]*/g, '')) + ', ' + JSON.stringify(textStyle) + ');';
 				if (!opts.concatenate) {
-					var astJs = uglify.parse(importScript, {filename: src});
-					astJs.figure_out_scope();
-					astJs.transform(uglify.Compressor());
-					astJs.compute_char_frequency();
-					astJs.mangle_names();
-					astRoot.push(astJs.print_to_string());
+					astRoot.push(compressAst(uglify.parse(importScript, {
+						filename: src
+					})));
 				} else {
 					astRoot.push(importScript);
 				}
@@ -151,6 +148,18 @@ function processImports(doc, opts) {
 	})).then(function() {
 		return astRoot.join('\n');
 	});
+}
+
+function compressAst(ast, opts) {
+	ast.figure_out_scope();
+	if (opts && !opts.concatenate) {
+		ast.transform(uglify.Compressor());
+		ast.compute_char_frequency();
+		ast.mangle_names();
+	}
+	return ast.print_to_string({
+//			source_map: uglify.SourceMap()
+	}).replace(/^"use strict"/, "");
 }
 
 function processScripts(doc, opts) {
@@ -178,14 +187,7 @@ function processScripts(doc, opts) {
 		});
 	});
 	return p.then(function() {
-		astRoot.figure_out_scope();
-		if (!opts.concatenate) {
-			astRoot.transform(uglify.Compressor());
-			astRoot.compute_char_frequency();
-			astRoot.mangle_names();
-		}
-		var source_map = uglify.SourceMap();
-		return astRoot.print_to_string({source_map: source_map});
+		return compressAst(astRoot, opts);
 	});
 }
 
