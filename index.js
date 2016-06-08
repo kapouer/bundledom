@@ -18,34 +18,24 @@ function bundledom(path, opts) {
 		append: [],
 		exclude: []
 	}, opts);
-	var jsBundle = "", cssBundle = "";
 	return loadDom(path).then(function(doc) {
-		processScripts(doc, opts).then(function(str) {
-			jsBundle += str;
-		}).then(function() {
-			return processImports(doc, opts);
-		}).then(function(results) {
-			jsBundle += results.js;
-			cssBundle += results.css;
-		}).then(function() {
-			return processStylesheets(doc, opts);
-		}).then(function(str) {
-			cssBundle += str;
-		}).then(function() {
+		processDocument(doc, opts).then(function(data) {
 			if (!opts.css) {
-				jsBundle += '\n(' + function() {
+				data.js += '\n(' + function() {
 					var sheet = document.createElement('style');
 					sheet.type = 'text/css';
 					sheet.textContent = CSS;
 					document.head.appendChild(sheet);
-				}.toString().replace('CSS', JSON.stringify(cssBundle)) + ')();';
+				}.toString().replace('CSS', JSON.stringify(data.css)) + ')();';
+				return data;
 			} else {
 				var cssPath = getRelativePath(doc, opts.css);
-				return writeFile(cssPath, cssBundle).then(function() {
+				return writeFile(cssPath, data.css).then(function() {
 					if (opts.cli) console.warn("css saved to", cssPath);
+					return data;
 				});
 			}
-		}).then(function() {
+		}).then(function(data) {
 			var p = Promise.resolve();
 			if (opts.html) {
 				p = p.then(function() {
@@ -58,13 +48,13 @@ function bundledom(path, opts) {
 			if (opts.js) {
 				p = p.then(function() {
 					var jsPath = getRelativePath(doc, opts.js);
-					return writeFile(jsPath, jsBundle).then(function() {
+					return writeFile(jsPath, data.js).then(function() {
 						if (opts.cli) console.warn("js saved to", jsPath)
 					});
 				});
 			} else {
 				p = p.then(function() {
-					return jsBundle;
+					return data;
 				});
 			}
 			return p;
@@ -72,89 +62,63 @@ function bundledom(path, opts) {
 	});
 }
 
-function getRelativePath(doc, path) {
-	var dir = Path.dirname(URL.parse(doc.baseURI).pathname);
-	if (path) return Path.join(dir, path);
-	else return dir;
+function processDocument(doc, opts) {
+	var data = {
+		js: "",
+		css: ""
+	};
+	return prepareImports(doc, opts).then(function() {
+		return processScripts(doc, opts).then(function(str) {
+			data.js += str;
+		});
+	}).then(function() {
+		return processStylesheets(doc, opts).then(function(str) {
+			data.css += str;
+		});
+	}).then(function() {
+		return data;
+	});
 }
 
-function processImports(doc, opts) {
+function prepareImports(doc, opts) {
 	var path = URL.parse(doc.baseURI).pathname;
 	var docRoot = Path.dirname(path);
-	var jsResults = [];
-	var cssResults = [];
-	return Promise.all(doc.queryAll('head > link[href][rel="import"]').map(function(node) {
+
+	var allLinks = doc.queryAll('head > link[href][rel="import"]');
+
+	prependToPivot(allLinks, opts.prepend, 'link', 'href', 'html', {rel: "import"});
+	appendToPivot(allLinks, opts.append, 'link', 'href', 'html', {rel: "import"});
+
+	// the order is not important
+	return Promise.all(allLinks.map(function(node) {
 		var src = node.getAttribute('href');
-		if (exclude(src, opts.exclude)) return;
-		removeNodeSpace(node);
+		if (exclude(src, opts.exclude)) return Promise.resolve();
 		src = Path.join(docRoot, src);
 		return loadDom(src).then(function(idoc) {
-			// limited Link rel=import support: only inline <script> and <style> are supported
-			var textStyle = idoc.queryAll('style').map(function(node) {
-				node.remove();
-				return node.textContent;
-			}).join('\n');
-			var astCss = postcss.parse(textStyle, {
-				from: src,
-				//safe: true
+			var iopts = Object.assign({}, opts, {
+				append: [],
+				prepend: [],
+				exclude: []
 			});
-			var plugins = [
-				postcssUrl({
-					url: postcssRebase
-				}),
-				autoprefixer()
-			];
-			if (!opts.concatenate) plugins.push(csswring({preserveHacks: true}));
-			return postcss(plugins).process(astCss, {to: path + '.css'}).then(function(result) {
-				cssResults.push(result.css);
-			}).then(function() {
-				var textScript = idoc.queryAll('script')
-					.filter(node => !node.type || node.type == "text/javascript")
-					.map(function(node) {
-						node.remove();
-						return node.textContent;
-					}).join('\n');
-
-				var html = idoc.body.innerHTML;
-				var importScript = '\n(' +
+			return processDocument(idoc, iopts).then(function(data) {
+				var iscript = '\n(' +
 				function(html) {
 					var ownDoc = document.implementation && document.implementation.createHTMLDocument
 						? document.implementation.createHTMLDocument('')
 						: document.createElement('iframe').contentWindow.document;
-					ownDoc.body.innerHTML = html;
+					ownDoc.documentElement.innerHTML = html;
 					document._currentScript = {
 						ownerDocument: ownDoc
 					};
 					SCRIPT
-				}.toString().replace('SCRIPT', textScript)
-				+ ')(' + JSON.stringify(html.replace(/[\t\n]*/g, '')) + ');';
-				if (!opts.concatenate) {
-					jsResults.push(compressAst(uglify.parse(importScript, {
-						filename: src
-					})));
-				} else {
-					jsResults.push(importScript);
-				}
+				}.toString().replace('SCRIPT', data.js)
+				+ ')(' + JSON.stringify(idoc.documentElement.innerHTML.replace(/[\t\n]*/g, '')) + ');';
+				createSibling(node, 'before', 'script').textContent = iscript;
+				createSibling(node, 'before', 'style').textContent = data.css;
+				removeNodeSpace(node);
 			});
 		});
-	})).then(function() {
-		return {
-			js: jsResults.join('\n'),
-			css: cssResults.join('\n')
-		};
-	});
-}
-
-function compressAst(ast, opts) {
-	ast.figure_out_scope();
-	if (opts && !opts.concatenate) {
-		ast.transform(uglify.Compressor());
-		ast.compute_char_frequency();
-		ast.mangle_names();
-	}
-	return ast.print_to_string({
-//			source_map: uglify.SourceMap()
-	}).replace(/^"use strict"/, "");
+	}));
 }
 
 function processScripts(doc, opts) {
@@ -164,20 +128,32 @@ function processScripts(doc, opts) {
 		opts.append.unshift(opts.js);
 		opts.exclude.unshift(opts.js);
 	}
-	var allScripts = doc.queryAll('head > script[src]');
+	var allScripts = doc.queryAll('script').filter(function(node) {
+		return !node.type || node.type == "text/javascript";
+	});
 	prependToPivot(allScripts, opts.prepend, 'script', 'src', 'js');
 	appendToPivot(allScripts, opts.append, 'script', 'src', 'js');
 
 	var p = Promise.resolve();
-	allScripts.forEach(function(node) {
+	allScripts.forEach(function(node, i) {
 		var src = node.getAttribute('src');
-		if (exclude(src, opts.exclude)) return;
+		if (src) {
+			if (exclude(src, opts.exclude)) return;
+			src = Path.join(docRoot, src);
+			p = p.then(function() {
+				return readFile(src);
+			});
+		} else if (node.textContent) {
+			src = doc.baseURI;
+			p = p.then(function() {
+				return node.textContent;
+			});
+		} else {
+			return;
+		}
 		removeNodeSpace(node);
-		src = Path.join(docRoot, src);
-		p = p.then(function() {
-			return readFile(src);
-		}).then(function(data) {
-			var ast = uglify.parse(data.toString(), {filename: src, toplevel: astRoot});
+		p = p.then(function(data) {
+			var ast = uglify.parse(data, {filename: src, toplevel: astRoot});
 			if (!astRoot) astRoot = ast;
 		});
 	});
@@ -194,22 +170,33 @@ function processStylesheets(doc, opts) {
 		opts.append.unshift(opts.css);
 		opts.exclude.unshift(opts.css);
 	}
-	var allLinks = doc.queryAll('head > link[href][rel="stylesheet"]');
+	var allLinks = doc.queryAll('link[href][rel="stylesheet"],style');
+
 	prependToPivot(allLinks, opts.prepend, 'link', 'href', 'css', {rel: "stylesheet"});
 	appendToPivot(allLinks, opts.append, 'link', 'href', 'css', {rel: "stylesheet"});
 
 	var p = Promise.resolve();
 	allLinks.forEach(function(node) {
 		var src = node.getAttribute('href');
-		if (exclude(src, opts.exclude)) return;
+		if (src) {
+			if (exclude(src, opts.exclude)) return;
+			src = Path.join(docRoot, src);
+			p = p.then(function() {
+				return readFile(src);
+			});
+		} else if (node.textContent) {
+			src = doc.baseURI;
+			p = p.then(function() {
+				return node.textContent;
+			});
+		} else {
+			return;
+		}
 		removeNodeSpace(node);
-		src = Path.join(docRoot, src);
-		p = p.then(function() {
-			return readFile(src);
-		}).then(function(data) {
-			var ast = postcss.parse(data.toString(), {
-				from: src,
-				//safe: true
+
+		p = p.then(function(data) {
+			var ast = postcss.parse(data, {
+				from: src
 			});
 			if (!astRoot) astRoot = ast;
 			else astRoot.push(ast);
@@ -237,6 +224,24 @@ function postcssRebase(oldUrl, decl, from, dirname, to, options, result) {
 	newPath = Path.resolve(from, newPath);
 	newPath = Path.relative(to, newPath);
 	return '/' + newPath;
+}
+
+function compressAst(ast, opts) {
+	ast.figure_out_scope();
+	if (opts && !opts.concatenate) {
+		ast.transform(uglify.Compressor());
+		ast.compute_char_frequency();
+		ast.mangle_names();
+	}
+	return ast.print_to_string({
+//			source_map: uglify.SourceMap()
+	}).replace(/^"use strict"/, "");
+}
+
+function getRelativePath(doc, path) {
+	var dir = Path.dirname(URL.parse(doc.baseURI).pathname);
+	if (path) return Path.join(dir, path);
+	else return dir;
 }
 
 function exclude(src, list) {
@@ -284,40 +289,42 @@ function spaceBefore(node) {
 	return node.ownerDocument.createTextNode(str);
 }
 
+function createSibling(refnode, direction, tag, attrs) {
+	var node = refnode.ownerDocument.createElement(tag);
+	if (attrs) for (var name in attrs) node.setAttribute(name, attrs[name]);
+	refnode[direction](node);
+	refnode[direction](spaceBefore(refnode));
+	return node;
+}
+
 function prependToPivot(scripts, list, tag, att, ext, attrs) {
+	if (!list.length) return;
 	var pivot = scripts[0];
 	if (!pivot) {
 		console.error("Cannot prepend before no node", tag, att, ext);
 		return;
 	}
-	var textNode = spaceBefore(pivot);
+	attrs = Object.assign({}, attrs);
 	filterByExt(list, ext).forEach(function(src) {
-		var node = pivot.ownerDocument.createElement(tag);
-		node[att] = src;
-		if (attrs) for (var name in attrs) node.setAttribute(name, attrs[name]);
-		pivot.before(node);
-		pivot.before(textNode.cloneNode());
-		scripts.unshift(node);
+		attrs[att] = src;
+		scripts.unshift(createSibling(pivot, 'before', tag, attrs));
 		debug("prepended", tag, att, src);
 	});
 }
 
 function appendToPivot(scripts, list, tag, att, ext, attrs) {
+	if (!list.length) return;
 	var pivot = scripts.slice(-1)[0];
 	if (!pivot) {
 		console.error("Cannot append after no node", tag, att, ext);
 		return;
 	}
-	var textNode = spaceBefore(pivot);
+	attrs = Object.assign({}, attrs);
 	list = filterByExt(list, ext);
 	while (list.length) {
 		var src = list.pop();
-		var node = pivot.ownerDocument.createElement(tag);
-		node[att] = src;
-		if (attrs) for (var name in attrs) node.setAttribute(name, attrs[name]);
-		pivot.after(node);
-		pivot.after(textNode.cloneNode());
-		scripts.push(node);
+		attrs[att] = src;
+		scripts.push(createSibling(pivot, 'after', tag, attrs));
 		debug("appended", tag, att, src);
 	}
 }
@@ -358,7 +365,7 @@ function readFile(path) {
 	return new Promise(function(resolve, reject) {
 		fs.readFile(path, function(err, data) {
 			if (err) reject(err);
-			else resolve(data);
+			else resolve(data.toString());
 		});
 	});
 }

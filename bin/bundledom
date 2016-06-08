@@ -68,8 +68,8 @@ var bundledom = require('..');
 
 opts.cli = true;
 
-bundledom(htmlInputPath, opts).then(function(str) {
-	if (!opts.js) console.log(str);
+bundledom(htmlInputPath, opts).then(function(data) {
+	if (!opts.js) console.log(data.js);
 }).catch(function(err) {
 	console.error(err);
 	process.exit(1);
