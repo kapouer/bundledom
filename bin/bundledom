@@ -46,9 +46,9 @@ try {
 	opts = {help: true};
 }
 
-var htmlPath = opts._args.pop();
+var htmlPath = opts._args && opts._args.pop();
 
-if (opts.help || !require('fs').existsSync(htmlPath)) {
+if (opts.help || !htmlPath || !require('fs').existsSync(htmlPath)) {
 	var help = parser.help({includeEnv: true}).trimRight();
 	console.log(`usage: bundledom [opts] <html file path>\n${help}`);
 	process.exit(0);
