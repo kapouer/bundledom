@@ -100,7 +100,7 @@ function processImports(doc, opts) {
 			});
 			var plugins = [
 				postcssUrl({
-					url: "rebase"
+					url: postcssRebase
 				}),
 				autoprefixer()
 			];
@@ -212,7 +212,7 @@ function processStylesheets(doc, opts) {
 	});
 	return p.then(function() {
 		var plugins = [
-			postcssUrl({url: "rebase"}),
+			postcssUrl({url: postcssRebase}),
 			autoprefixer()
 		];
 		if (!opts.concatenate) plugins.push(csswring({preserveHacks: true}));
@@ -220,6 +220,18 @@ function processStylesheets(doc, opts) {
 			return result.css;
 		});
 	});
+}
+
+function postcssRebase(oldUrl, decl, from, dirname, to, options, result) {
+	var urlObj = URL.parse(oldUrl);
+	if (urlObj.protocol) return oldUrl;
+	var newPath = oldUrl;
+	if (dirname !== from) {
+		newPath = Path.relative(from, Path.join(dirname, newPath));
+	}
+	newPath = Path.resolve(from, newPath);
+	newPath = Path.relative(to, newPath);
+	return '/' + newPath;
 }
 
 function exclude(src, list) {
