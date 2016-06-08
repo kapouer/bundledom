@@ -102,9 +102,9 @@ function processImports(doc, opts) {
 				postcssUrl({
 					url: "rebase"
 				}),
-				autoprefixer(),
-				csswring({preserveHacks: true})
+				autoprefixer()
 			];
+			if (!opts.concatenate) plugins.push(csswring({preserveHacks: true}));
 			return postcss(plugins).process(astCss, {to: path + '.css'}).then(function(result) {
 				return result.css;
 			}).then(function(textStyle) {
@@ -120,11 +120,11 @@ function processImports(doc, opts) {
 						sheet.type = 'text/css';
 						sheet.textContent = css;
 						document.head.appendChild(sheet);
-					}.toString() + ')(' + JSON.stringify(textStyle) + ')';
+					}.toString() + ')(' + JSON.stringify(textStyle) + ');';
 				}
 
 				var html = idoc.body.innerHTML;
-				var importScript = '(' +
+				var importScript = '\n(' +
 				function(html, style) {
 					var ownDoc = document.implementation && document.implementation.createHTMLDocument
 						? document.implementation.createHTMLDocument('')
@@ -135,14 +135,17 @@ function processImports(doc, opts) {
 					};
 					SCRIPT
 				}.toString().replace('SCRIPT', textScript)
-				+ ')(' + JSON.stringify(html.replace(/[\t\n]*/g, '')) + ', ' + JSON.stringify(textStyle) + ')';
-
-				var astJs = uglify.parse(importScript, {filename: src});
-				astJs.figure_out_scope();
-				astJs.transform(uglify.Compressor());
-				astJs.compute_char_frequency();
-				astJs.mangle_names();
-				astRoot.push(astJs.print_to_string());
+				+ ')(' + JSON.stringify(html.replace(/[\t\n]*/g, '')) + ', ' + JSON.stringify(textStyle) + ');';
+				if (!opts.concatenate) {
+					var astJs = uglify.parse(importScript, {filename: src});
+					astJs.figure_out_scope();
+					astJs.transform(uglify.Compressor());
+					astJs.compute_char_frequency();
+					astJs.mangle_names();
+					astRoot.push(astJs.print_to_string());
+				} else {
+					astRoot.push(importScript);
+				}
 			});
 		});
 	})).then(function() {
@@ -161,20 +164,26 @@ function processScripts(doc, opts) {
 	prependToPivot(allScripts, opts.prepend, 'script', 'src', 'js');
 	appendToPivot(allScripts, opts.append, 'script', 'src', 'js');
 
-	return Promise.all(allScripts.map(function(node) {
+	var p = Promise.resolve();
+	allScripts.forEach(function(node) {
 		var src = node.getAttribute('src');
 		if (exclude(src, opts.exclude)) return;
 		removeNodeSpace(node);
 		src = Path.join(docRoot, src);
-		return readFile(src).then(function(data) {
+		p = p.then(function() {
+			return readFile(src);
+		}).then(function(data) {
 			var ast = uglify.parse(data.toString(), {filename: src, toplevel: astRoot});
 			if (!astRoot) astRoot = ast;
 		});
-	})).then(function() {
+	});
+	return p.then(function() {
 		astRoot.figure_out_scope();
-		astRoot.transform(uglify.Compressor());
-		astRoot.compute_char_frequency();
-		astRoot.mangle_names();
+		if (!opts.concatenate) {
+			astRoot.transform(uglify.Compressor());
+			astRoot.compute_char_frequency();
+			astRoot.mangle_names();
+		}
 		var source_map = uglify.SourceMap();
 		return astRoot.print_to_string({source_map: source_map});
 	});
@@ -184,12 +193,15 @@ function processStylesheets(doc, opts) {
 	var path = URL.parse(doc.baseURI).pathname;
 	var docRoot = Path.dirname(path);
 	var astRoot;
-	return Promise.all(doc.queryAll('head > link[href][rel="stylesheet"]').map(function(node) {
+	var p = Promise.resolve();
+	doc.queryAll('head > link[href][rel="stylesheet"]').forEach(function(node) {
 		var src = node.getAttribute('href');
 		if (exclude(src, opts.exclude)) return;
 		removeNodeSpace(node);
 		src = Path.join(docRoot, src);
-		return readFile(src).then(function(data) {
+		p = p.then(function() {
+			return readFile(src);
+		}).then(function(data) {
 			var ast = postcss.parse(data.toString(), {
 				from: src,
 				//safe: true
@@ -197,12 +209,13 @@ function processStylesheets(doc, opts) {
 			if (!astRoot) astRoot = ast;
 			else astRoot.push(ast);
 		});
-	})).then(function() {
+	});
+	return p.then(function() {
 		var plugins = [
 			postcssUrl({url: "rebase"}),
-			autoprefixer(),
-			csswring({preserveHacks: true})
+			autoprefixer()
 		];
+		if (!opts.concatenate) plugins.push(csswring({preserveHacks: true}));
 		return postcss(plugins).process(astRoot, {to: path + '.css'}).then(function(result) {
 			return result.css;
 		});
