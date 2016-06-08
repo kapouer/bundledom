@@ -35,6 +35,11 @@ var parser = dash.createParser({options: [
 		names: ['output'],
 		type: 'string',
 		help: 'bundle output file name'
+	},
+	{
+		names: ['concatenate'],
+		type: 'bool',
+		help: 'do not minify'
 	}
 ]});
 
