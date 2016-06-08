@@ -12,15 +12,27 @@ Install
 Usage
 -----
 
-From command-line:
+This saves modified html file, and styles are bundled into js file:
 ```
 bundledom 
---serialize index.prod.html
---output /js/index.bundle.js
+--html index.prod.html
+--js /bundles/index.js
 --exclude jquery.js 
 --prepend '/js/HTMLImports.js'
 public/index.html
 ```
+
+This saves styles separately:
+```
+bundledom 
+--html index.prod.html
+--css /bundles/index.css
+--js /bundles/index.js
+--exclude jquery.js 
+--prepend '/js/HTMLImports.js'
+public/index.html
+```
+
 
 Help
 ----

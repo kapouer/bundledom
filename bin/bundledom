@@ -12,9 +12,9 @@ var parser = dash.createParser({options: [
 		help: 'Print this help and exit.'
 	},
 	{
-		names: ['serialize'],
+		names: ['html'],
 		type: 'string',
-		help: 'serialize modified DOM to file'
+		help: 'modified html file name'
 	},
 	{
 		names: ['prepend'],
@@ -32,9 +32,14 @@ var parser = dash.createParser({options: [
 		help: 'exclude scripts, links, imports'
 	},
 	{
-		names: ['output'],
+		names: ['js'],
 		type: 'string',
-		help: 'bundle output file name'
+		help: 'js bundle file name'
+	},
+	{
+		names: ['css'],
+		type: 'string',
+		help: 'css bundle file name'
 	},
 	{
 		names: ['concatenate'],
@@ -51,9 +56,9 @@ try {
 	opts = {help: true};
 }
 
-var htmlPath = opts._args && opts._args.pop();
+var htmlInputPath = opts._args && opts._args.pop();
 
-if (opts.help || !htmlPath || !require('fs').existsSync(htmlPath)) {
+if (opts.help || !htmlInputPath || !require('fs').existsSync(htmlInputPath)) {
 	var help = parser.help({includeEnv: true}).trimRight();
 	console.log(`usage: bundledom [opts] <html file path>\n${help}`);
 	process.exit(0);
@@ -63,8 +68,8 @@ var bundledom = require('..');
 
 opts.cli = true;
 
-bundledom(htmlPath, opts).then(function(str) {
-	if (!opts.output) console.log(str);
+bundledom(htmlInputPath, opts).then(function(str) {
+	if (!opts.js) console.log(str);
 }).catch(function(err) {
 	console.error(err);
 	process.exit(1);

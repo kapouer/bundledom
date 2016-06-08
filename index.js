@@ -18,58 +18,57 @@ function bundledom(path, opts) {
 		append: [],
 		exclude: []
 	}, opts);
-	var output;
+	var jsBundle = "", cssBundle = "";
 	return loadDom(path).then(function(doc) {
-		return processScripts(doc, opts).then(function(js) {
-			output = js;
-			return doc;
-		});
-	}).then(function(doc) {
-		return processStylesheets(doc, opts).then(function(css) {
-			output += '\n(' + function() {
-				var sheet = document.createElement('style');
-				sheet.type = 'text/css';
-				sheet.textContent = CSS;
-				document.head.appendChild(sheet);
-			}.toString().replace('CSS', JSON.stringify(css)) + ')();';
-			return doc;
-		});
-	}).then(function(doc) {
-		return processImports(doc, opts).then(function(imports) {
-			output += imports;
-			return doc;
-		});
-	}).then(function(doc) {
-		var p = Promise.resolve(output);
-		if (opts.serialize) {
-			p = p.then(function() {
-				var serializePath = getRelativePath(doc, opts.serialize);
-				return new Promise(function(resolve, reject) {
-					fs.writeFile(serializePath, doc.documentElement.outerHTML, function(err) {
-						if (err) reject(err);
-						else {
-							if (opts.cli) console.warn("Serialize", serializePath);
-							resolve();
-						}
+		processScripts(doc, opts).then(function(str) {
+			jsBundle += str;
+		}).then(function() {
+			return processImports(doc, opts);
+		}).then(function(results) {
+			jsBundle += results.js;
+			cssBundle += results.css;
+		}).then(function() {
+			return processStylesheets(doc, opts);
+		}).then(function(str) {
+			cssBundle += str;
+		}).then(function() {
+			if (!opts.css) {
+				jsBundle += '\n(' + function() {
+					var sheet = document.createElement('style');
+					sheet.type = 'text/css';
+					sheet.textContent = CSS;
+					document.head.appendChild(sheet);
+				}.toString().replace('CSS', JSON.stringify(cssBundle)) + ')();';
+			} else {
+				var cssPath = getRelativePath(doc, opts.css);
+				return writeFile(cssPath, cssBundle).then(function() {
+					if (opts.cli) console.warn("css saved to", cssPath);
+				});
+			}
+		}).then(function() {
+			var p = Promise.resolve();
+			if (opts.html) {
+				p = p.then(function() {
+					var htmlPath = getRelativePath(doc, opts.html);
+					return writeFile(htmlPath, doc.documentElement.outerHTML).then(function() {
+						if (opts.cli) console.warn("html saved to", htmlPath);
 					});
 				});
-			});
-		}
-		if (opts.output) {
-			p = p.then(function() {
-				return new Promise(function(resolve, reject) {
-					var outputPath = getRelativePath(doc, opts.output);
-					fs.writeFile(outputPath, output, function(err) {
-						if (err) reject(err);
-						else {
-							if (opts.cli) console.warn("Output", outputPath);
-							resolve();
-						}
+			}
+			if (opts.js) {
+				p = p.then(function() {
+					var jsPath = getRelativePath(doc, opts.js);
+					return writeFile(jsPath, jsBundle).then(function() {
+						if (opts.cli) console.warn("js saved to", jsPath)
 					});
 				});
-			});
-		}
-		return p;
+			} else {
+				p = p.then(function() {
+					return jsBundle;
+				});
+			}
+			return p;
+		});
 	});
 }
 
@@ -82,7 +81,8 @@ function getRelativePath(doc, path) {
 function processImports(doc, opts) {
 	var path = URL.parse(doc.baseURI).pathname;
 	var docRoot = Path.dirname(path);
-	var astRoot = [];
+	var jsResults = [];
+	var cssResults = [];
 	return Promise.all(doc.queryAll('head > link[href][rel="import"]').map(function(node) {
 		var src = node.getAttribute('href');
 		if (exclude(src, opts.exclude)) return;
@@ -106,26 +106,18 @@ function processImports(doc, opts) {
 			];
 			if (!opts.concatenate) plugins.push(csswring({preserveHacks: true}));
 			return postcss(plugins).process(astCss, {to: path + '.css'}).then(function(result) {
-				return result.css;
-			}).then(function(textStyle) {
+				cssResults.push(result.css);
+			}).then(function() {
 				var textScript = idoc.queryAll('script')
 					.filter(node => !node.type || node.type == "text/javascript")
 					.map(function(node) {
 						node.remove();
 						return node.textContent;
 					}).join('\n');
-				if (textStyle) {
-					textScript += '\n(' + function(css) {
-						var sheet = document.createElement('style');
-						sheet.type = 'text/css';
-						sheet.textContent = css;
-						document.head.appendChild(sheet);
-					}.toString() + ')(' + JSON.stringify(textStyle) + ');';
-				}
 
 				var html = idoc.body.innerHTML;
 				var importScript = '\n(' +
-				function(html, style) {
+				function(html) {
 					var ownDoc = document.implementation && document.implementation.createHTMLDocument
 						? document.implementation.createHTMLDocument('')
 						: document.createElement('iframe').contentWindow.document;
@@ -135,18 +127,21 @@ function processImports(doc, opts) {
 					};
 					SCRIPT
 				}.toString().replace('SCRIPT', textScript)
-				+ ')(' + JSON.stringify(html.replace(/[\t\n]*/g, '')) + ', ' + JSON.stringify(textStyle) + ');';
+				+ ')(' + JSON.stringify(html.replace(/[\t\n]*/g, '')) + ');';
 				if (!opts.concatenate) {
-					astRoot.push(compressAst(uglify.parse(importScript, {
+					jsResults.push(compressAst(uglify.parse(importScript, {
 						filename: src
 					})));
 				} else {
-					astRoot.push(importScript);
+					jsResults.push(importScript);
 				}
 			});
 		});
 	})).then(function() {
-		return astRoot.join('\n');
+		return {
+			js: jsResults.join('\n'),
+			css: cssResults.join('\n')
+		};
 	});
 }
 
@@ -165,9 +160,9 @@ function compressAst(ast, opts) {
 function processScripts(doc, opts) {
 	var docRoot = getRelativePath(doc);
 	var astRoot;
-	if (opts.output) {
-		opts.append.unshift(opts.output);
-		opts.exclude.unshift(opts.output);
+	if (opts.js) {
+		opts.append.unshift(opts.js);
+		opts.exclude.unshift(opts.js);
 	}
 	var allScripts = doc.queryAll('head > script[src]');
 	prependToPivot(allScripts, opts.prepend, 'script', 'src', 'js');
@@ -195,8 +190,16 @@ function processStylesheets(doc, opts) {
 	var path = URL.parse(doc.baseURI).pathname;
 	var docRoot = Path.dirname(path);
 	var astRoot;
+	if (opts.css) {
+		opts.append.unshift(opts.css);
+		opts.exclude.unshift(opts.css);
+	}
+	var allLinks = doc.queryAll('head > link[href][rel="stylesheet"]');
+	prependToPivot(allLinks, opts.prepend, 'link', 'href', 'css', {rel: "stylesheet"});
+	appendToPivot(allLinks, opts.append, 'link', 'href', 'css', {rel: "stylesheet"});
+
 	var p = Promise.resolve();
-	doc.queryAll('head > link[href][rel="stylesheet"]').forEach(function(node) {
+	allLinks.forEach(function(node) {
 		var src = node.getAttribute('href');
 		if (exclude(src, opts.exclude)) return;
 		removeNodeSpace(node);
@@ -264,15 +267,24 @@ function removeNodeSpace(node) {
 
 function spaceBefore(node) {
 	var str = "";
-	var cur = node.previousSibling;
+	var cur = node.previousSibling, val;
 	while (cur && cur.nodeType == 3) {
-		str = cur.nodeValue + str;
+		val = cur.nodeValue;
+		var nl = /([\n\r]*[\s]*)/.exec(val);
+		if (nl && nl.length == 2) {
+			val = nl[1];
+			nl = true;
+		} else {
+			nl = false;
+		}
+		str = val + str;
+		if (nl) break;
 		cur = cur.previousSibling;
 	}
 	return node.ownerDocument.createTextNode(str);
 }
 
-function prependToPivot(scripts, list, tag, att, ext) {
+function prependToPivot(scripts, list, tag, att, ext, attrs) {
 	var pivot = scripts[0];
 	if (!pivot) {
 		console.error("Cannot prepend before no node", tag, att, ext);
@@ -282,6 +294,7 @@ function prependToPivot(scripts, list, tag, att, ext) {
 	filterByExt(list, ext).forEach(function(src) {
 		var node = pivot.ownerDocument.createElement(tag);
 		node[att] = src;
+		if (attrs) for (var name in attrs) node.setAttribute(name, attrs[name]);
 		pivot.before(node);
 		pivot.before(textNode.cloneNode());
 		scripts.unshift(node);
@@ -289,7 +302,7 @@ function prependToPivot(scripts, list, tag, att, ext) {
 	});
 }
 
-function appendToPivot(scripts, list, tag, att, ext) {
+function appendToPivot(scripts, list, tag, att, ext, attrs) {
 	var pivot = scripts.slice(-1)[0];
 	if (!pivot) {
 		console.error("Cannot append after no node", tag, att, ext);
@@ -301,6 +314,7 @@ function appendToPivot(scripts, list, tag, att, ext) {
 		var src = list.pop();
 		var node = pivot.ownerDocument.createElement(tag);
 		node[att] = src;
+		if (attrs) for (var name in attrs) node.setAttribute(name, attrs[name]);
 		pivot.after(node);
 		pivot.after(textNode.cloneNode());
 		scripts.push(node);
@@ -310,28 +324,33 @@ function appendToPivot(scripts, list, tag, att, ext) {
 
 function loadDom(path) {
 	return readFile(path).then(function(data) {
-		var doc = jsdom(data, {
-			url: 'file://' + Path.resolve(path),
-			features: {
-				FetchExternalResources: [],
-				ProcessExternalResources: []
-			}
+		return new Promise(function(resolve, reject) {
+			jsdom(data, {
+				url: 'file://' + Path.resolve(path),
+				features: {
+					FetchExternalResources: [],
+					ProcessExternalResources: []
+				},
+				created: function(err, win) {
+					if (err) return reject(err);
+					var doc = win.document;
+					doc.query = function(sel) {
+						return doc.querySelector(sel);
+					};
+					doc.queryAll = function(sel) {
+						return Array.from(doc.querySelectorAll(sel));
+					};
+					win.Node.prototype.before = function(node) {
+						this.parentNode.insertBefore(node, this);
+					};
+					win.Node.prototype.after = function(node) {
+						if (this.nextSibling) this.parentNode.insertBefore(node, this.nextSibling);
+						else this.parentNode.appendChild(node);
+					};
+					resolve(doc);
+				}
+			});
 		});
-		var win = doc.defaultView;
-		doc.query = function(sel) {
-			return doc.querySelector(sel);
-		};
-		doc.queryAll = function(sel) {
-			return Array.from(doc.querySelectorAll(sel));
-		};
-		win.Node.prototype.before = function(node) {
-			this.parentNode.insertBefore(node, this);
-		};
-		win.Node.prototype.after = function(node) {
-			if (this.nextSibling) this.parentNode.insertBefore(node, this.nextSibling);
-			else this.parentNode.appendChild(node);
-		};
-		return doc;
 	});
 }
 
@@ -339,7 +358,16 @@ function readFile(path) {
 	return new Promise(function(resolve, reject) {
 		fs.readFile(path, function(err, data) {
 			if (err) reject(err);
-			resolve(data);
+			else resolve(data);
+		});
+	});
+}
+
+function writeFile(path, data) {
+	return new Promise(function(resolve, reject) {
+		fs.writeFile(path, data, function(err) {
+			if (err) reject(err);
+			else resolve();
 		});
 	});
 }
