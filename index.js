@@ -120,7 +120,7 @@ function processImports(doc, opts) {
 						sheet.type = 'text/css';
 						sheet.textContent = css;
 						document.head.appendChild(sheet);
-					}.toString() + '(' + JSON.stringify(textStyle) + ')';
+					}.toString() + ')(' + JSON.stringify(textStyle) + ')';
 				}
 
 				var html = idoc.body.innerHTML;
