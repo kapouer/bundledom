@@ -3,8 +3,6 @@
 var Path = require('path');
 var dash = require('dashdash');
 
-process.chdir(Path.dirname(__dirname));
-
 var parser = dash.createParser({options: [
 	{
 		names: ['help', 'h'],
