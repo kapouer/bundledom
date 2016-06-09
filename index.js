@@ -19,7 +19,7 @@ function bundledom(path, opts) {
 		exclude: []
 	}, opts);
 	return loadDom(path).then(function(doc) {
-		processDocument(doc, opts).then(function(data) {
+		return processDocument(doc, opts).then(function(data) {
 			if (!opts.css) {
 				data.js += '\n(' + function() {
 					var sheet = document.createElement('style');
