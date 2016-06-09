@@ -69,11 +69,11 @@ function processDocument(doc, opts) {
 	};
 	return prepareImports(doc, opts).then(function() {
 		return processScripts(doc, opts).then(function(str) {
-			data.js += str;
+			if (str) data.js += str;
 		});
 	}).then(function() {
 		return processStylesheets(doc, opts).then(function(str) {
-			data.css += str;
+			if (str) data.css += str;
 		});
 	}).then(function() {
 		return data;
@@ -98,7 +98,9 @@ function prepareImports(doc, opts) {
 			var iopts = Object.assign({}, opts, {
 				append: [],
 				prepend: [],
-				exclude: []
+				exclude: [],
+				css: null,
+				js: null
 			});
 			return processDocument(idoc, iopts).then(function(data) {
 				var iscript = '\n(' +
@@ -114,7 +116,9 @@ function prepareImports(doc, opts) {
 				}.toString().replace('SCRIPT', data.js)
 				+ ')(' + JSON.stringify(idoc.documentElement.innerHTML.replace(/[\t\n]*/g, '')) + ');';
 				createSibling(node, 'before', 'script').textContent = iscript;
-				createSibling(node, 'before', 'style').textContent = data.css;
+				if (data.css) {
+					createSibling(node, 'before', 'style').textContent = data.css;
+				}
 				removeNodeSpace(node);
 			});
 		});
@@ -170,6 +174,7 @@ function processStylesheets(doc, opts) {
 		opts.append.unshift(opts.css);
 		opts.exclude.unshift(opts.css);
 	}
+
 	var allLinks = doc.queryAll('link[href][rel="stylesheet"],style');
 
 	prependToPivot(allLinks, opts.prepend, 'link', 'href', 'css', {rel: "stylesheet"});
@@ -179,7 +184,9 @@ function processStylesheets(doc, opts) {
 	allLinks.forEach(function(node) {
 		var src = node.getAttribute('href');
 		if (src) {
-			if (exclude(src, opts.exclude)) return;
+			if (exclude(src, opts.exclude)) {
+				return;
+			}
 			src = Path.join(docRoot, src);
 			p = p.then(function() {
 				return readFile(src);
@@ -195,14 +202,19 @@ function processStylesheets(doc, opts) {
 		removeNodeSpace(node);
 
 		p = p.then(function(data) {
-			var ast = postcss.parse(data, {
-				from: src
-			});
-			if (!astRoot) astRoot = ast;
-			else astRoot.push(ast);
+			try {
+				var ast = postcss.parse(data, {
+					from: src
+				});
+				if (!astRoot) astRoot = ast;
+				else astRoot.push(ast);
+			} catch(ex) {
+				return Promise.reject(ex);
+			}
 		});
 	});
 	return p.then(function() {
+		if (!astRoot) return;
 		var plugins = [
 			postcssUrl({url: postcssRebase}),
 			autoprefixer()
@@ -298,14 +310,15 @@ function createSibling(refnode, direction, tag, attrs) {
 }
 
 function prependToPivot(scripts, list, tag, att, ext, attrs) {
+	list = filterByExt(list, ext);
 	if (!list.length) return;
 	var pivot = scripts[0];
 	if (!pivot) {
-		console.error("Cannot prepend before no node", tag, att, ext);
+		console.error("Missing node to prepend to", list);
 		return;
 	}
 	attrs = Object.assign({}, attrs);
-	filterByExt(list, ext).forEach(function(src) {
+	list.forEach(function(src) {
 		attrs[att] = src;
 		scripts.unshift(createSibling(pivot, 'before', tag, attrs));
 		debug("prepended", tag, att, src);
@@ -313,14 +326,14 @@ function prependToPivot(scripts, list, tag, att, ext, attrs) {
 }
 
 function appendToPivot(scripts, list, tag, att, ext, attrs) {
+	list = filterByExt(list, ext);
 	if (!list.length) return;
 	var pivot = scripts.slice(-1)[0];
 	if (!pivot) {
-		console.error("Cannot append after no node", tag, att, ext);
+		console.error("Missing node to append to", list);
 		return;
 	}
 	attrs = Object.assign({}, attrs);
-	list = filterByExt(list, ext);
 	while (list.length) {
 		var src = list.pop();
 		attrs[att] = src;
