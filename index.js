@@ -84,7 +84,7 @@ function prepareImports(doc, opts) {
 	var path = URL.parse(doc.baseURI).pathname;
 	var docRoot = Path.dirname(path);
 
-	var allLinks = doc.queryAll('head > link[href][rel="import"]');
+	var allLinks = doc.queryAll('link[href][rel="import"]');
 
 	prependToPivot(allLinks, opts.prepend, 'link', 'href', 'html', {rel: "import"});
 	appendToPivot(allLinks, opts.append, 'link', 'href', 'html', {rel: "import"});
