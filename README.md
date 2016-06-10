@@ -7,8 +7,8 @@ Features
 --------
 
 * recursively concatenate scripts, styles and html in HTML imports
-* concatenate and minify scripts and stylesheets (which are also run through
-autoprefixer).
+* minify scripts and stylesheets
+* autoprefix stylesheets
 * bundle everything in one single js file, or split in js / css.
 * prepend or append additional scripts, styles, or imports
 * exclude by matching a url substring
@@ -44,7 +44,7 @@ bundledom
 public/index.html
 ```
 
-This does not compress files:
+This does not compress files, and specifies root dir
 ```
 bundledom
 --concatenate
@@ -53,7 +53,8 @@ bundledom
 --js /bundles/index.js
 --exclude jquery.js 
 --prepend '/js/HTMLImports.js'
-public/index.html
+--root public
+public/templates/index.html
 ```
 
 Paths are relative to the input file path.
