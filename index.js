@@ -18,7 +18,7 @@ function bundledom(path, opts) {
 		append: [],
 		exclude: []
 	}, opts);
-	return loadDom(path).then(function(doc) {
+	return loadDom(path, opts.root).then(function(doc) {
 		return processDocument(doc, opts).then(function(data) {
 			if (!opts.css) {
 				data.js += '\n(' + function() {
@@ -94,7 +94,7 @@ function prepareImports(doc, opts) {
 		var src = node.getAttribute('href');
 		if (exclude(src, opts.exclude)) return Promise.resolve();
 		src = Path.join(docRoot, src);
-		return loadDom(src).then(function(idoc) {
+		return loadDom(src, opts.root).then(function(idoc) {
 			var iopts = Object.assign({}, opts, {
 				append: [],
 				prepend: [],
@@ -342,11 +342,13 @@ function appendToPivot(scripts, list, tag, att, ext, attrs) {
 	}
 }
 
-function loadDom(path) {
+function loadDom(path, basepath) {
+	if (!basepath) basepath = path;
+	else basepath = Path.join(basepath, Path.basename(path));
 	return readFile(path).then(function(data) {
 		return new Promise(function(resolve, reject) {
 			jsdom(data, {
-				url: 'file://' + Path.resolve(path),
+				url: 'file://' + Path.resolve(basepath),
 				features: {
 					FetchExternalResources: [],
 					ProcessExternalResources: []

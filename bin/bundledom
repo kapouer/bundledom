@@ -43,6 +43,11 @@ var parser = dash.createParser({options: [
 		names: ['concatenate'],
 		type: 'bool',
 		help: 'do not minify'
+	},
+	{
+		names: ['root'],
+		type: 'string',
+		help: 'root directory instead of dirname(html file path)'
 	}
 ]});
 
