@@ -26,7 +26,6 @@
   "homepage": "https://github.com/kapouer/bundledom#readme",
   "dependencies": {
     "autoprefixer": "^6.3.6",
-    "autoprefixer-core": "^6.0.1",
     "csswring": "^5.0.0",
     "dashdash": "^1.14.0",
     "debug": "^2.2.0",
