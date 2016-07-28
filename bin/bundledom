@@ -15,17 +15,17 @@ var parser = dash.createParser({options: [
 		help: 'modified html file name'
 	},
 	{
-		names: ['prepend'],
+		names: ['prepend', 'p'],
 		type: 'arrayOfString',
 		help: 'prepend scripts'
 	},
 	{
-		names: ['append'],
+		names: ['append', 'a'],
 		type: 'arrayOfString',
 		help: 'append scripts'
 	},
 	{
-		names: ['exclude'],
+		names: ['exclude', 'x'],
 		type: 'arrayOfString',
 		help: 'exclude scripts, links, imports'
 	},
