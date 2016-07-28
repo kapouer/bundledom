@@ -168,7 +168,7 @@ function processScripts(doc, opts) {
 		});
 	});
 	return p.then(function() {
-		return compressAst(astRoot, opts);
+		return astRoot ? compressAst(astRoot, opts) : "";
 	});
 }
 
