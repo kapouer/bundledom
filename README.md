@@ -11,7 +11,7 @@ Features
 * autoprefix stylesheets
 * bundle everything in one single js file, or split in js / css.
 * prepend or append additional scripts, styles, or imports
-* exclude by matching a url substring
+* exclude or ignore a tag by matching a url substring
 * modify the DOM and outputs html
 
 
@@ -28,7 +28,7 @@ This saves modified html file, and styles are bundled into js file:
 bundledom 
 --html bundles/index.html
 --js /bundles/index.js
---exclude jquery.js 
+-x jquery.js -x moment.js -i index.js
 --prepend '/js/HTMLImports.js'
 public/index.html
 ```
