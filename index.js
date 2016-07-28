@@ -16,7 +16,8 @@ function bundledom(path, opts) {
 	opts = Object.assign({
 		prepend: [],
 		append: [],
-		exclude: []
+		exclude: [],
+		ignore: []
 	}, opts);
 	return loadDom(path, opts.root).then(function(doc) {
 		return processDocument(doc, opts).then(function(data) {
@@ -92,13 +93,14 @@ function prepareImports(doc, opts) {
 	// the order is not important
 	return Promise.all(allLinks.map(function(node) {
 		var src = node.getAttribute('href');
-		if (exclude(src, opts.exclude)) return Promise.resolve();
+		if (filterByName(src, opts.ignore)) return Promise.resolve();
 		src = Path.join(docRoot, src);
 		return loadDom(src, opts.root).then(function(idoc) {
 			var iopts = Object.assign({}, opts, {
 				append: [],
 				prepend: [],
 				exclude: [],
+				ignore: [],
 				css: null,
 				js: null
 			});
@@ -130,7 +132,7 @@ function processScripts(doc, opts) {
 	var astRoot;
 	if (opts.js) {
 		opts.append.unshift(opts.js);
-		opts.exclude.unshift(opts.js);
+		opts.ignore.unshift(opts.js);
 	}
 	var allScripts = doc.queryAll('script').filter(function(node) {
 		return !node.type || node.type == "text/javascript";
@@ -142,7 +144,11 @@ function processScripts(doc, opts) {
 	allScripts.forEach(function(node, i) {
 		var src = node.getAttribute('src');
 		if (src) {
-			if (exclude(src, opts.exclude)) return;
+			if (filterByName(src, opts.ignore)) return;
+			if (filterByName(src, opts.exclude)) {
+				node.remove();
+				return;
+			}
 			src = Path.join(docRoot, src);
 			p = p.then(function() {
 				return readFile(src);
@@ -184,7 +190,11 @@ function processStylesheets(doc, opts) {
 	allLinks.forEach(function(node) {
 		var src = node.getAttribute('href');
 		if (src) {
-			if (exclude(src, opts.exclude)) {
+			if (filterByName(src, opts.ignore)) {
+				return;
+			}
+			if (filterByName(src, opts.exclude)) {
+				node.remove();
 				return;
 			}
 			src = Path.join(docRoot, src);
@@ -256,7 +266,7 @@ function getRelativePath(doc, path) {
 	else return dir;
 }
 
-function exclude(src, list) {
+function filterByName(src, list) {
 	if (!list) return;
 	var found = list.some(function(str) {
 		return ~src.indexOf(str);

@@ -30,6 +30,11 @@ var parser = dash.createParser({options: [
 		help: 'exclude scripts, links, imports'
 	},
 	{
+		names: ['ignore', 'i'],
+		type: 'arrayOfString',
+		help: 'ignore scripts, links, imports'
+	},
+	{
 		names: ['js'],
 		type: 'string',
 		help: 'js bundle file name'
