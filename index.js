@@ -101,7 +101,13 @@ function prepareImports(doc, opts, data) {
 	// the order is not important
 	return Promise.all(allLinks.map(function(node) {
 		var src = node.getAttribute('href');
-		if (filterByName(src, opts.ignore)) return Promise.resolve();
+		if (filterByName(src, opts.ignore)) {
+			return;
+		}
+		if (filterByName(src, opts.exclude)) {
+			node.remove();
+			return;
+		}
 		data.imports.push(src);
 		src = Path.join(docRoot, src);
 		return loadDom(src, opts.root).then(function(idoc) {
@@ -153,7 +159,9 @@ function processScripts(doc, opts, data) {
 	allScripts.forEach(function(node, i) {
 		var src = node.getAttribute('src');
 		if (src) {
-			if (filterByName(src, opts.ignore)) return;
+			if (filterByName(src, opts.ignore)) {
+				return;
+			}
 			if (filterByName(src, opts.exclude)) {
 				node.remove();
 				return;
@@ -188,7 +196,7 @@ function processStylesheets(doc, opts, data) {
 	var astRoot;
 	if (opts.css) {
 		opts.append.unshift(opts.css);
-		opts.exclude.unshift(opts.css);
+		opts.ignore.unshift(opts.css);
 	}
 
 	var allLinks = doc.queryAll('link[href][rel="stylesheet"],style');
