@@ -19,8 +19,9 @@ function bundledom(path, opts, cb) {
 		exclude: [],
 		ignore: []
 	}, opts);
-	return loadDom(path, opts.root).then(function(doc) {
-		return processDocument(doc, opts).then(function(data) {
+	var p = loadDom(path, opts.root).then(function(doc) {
+		var data = {};
+		return processDocument(doc, opts, data).then(function() {
 			if (!opts.css) {
 				data.js += '\n(' + function() {
 					var sheet = document.createElement('style');
@@ -67,17 +68,20 @@ function bundledom(path, opts, cb) {
 	else return p;
 }
 
-function processDocument(doc, opts) {
-	var data = {
+function processDocument(doc, opts, data) {
+	Object.assign(data, {
+		imports: [],
+		scripts: [],
+		stylesheets: [],
 		js: "",
 		css: ""
-	};
-	return prepareImports(doc, opts).then(function() {
-		return processScripts(doc, opts).then(function(str) {
+	});
+	return prepareImports(doc, opts, data).then(function() {
+		return processScripts(doc, opts, data).then(function(str) {
 			if (str) data.js += str;
 		});
 	}).then(function() {
-		return processStylesheets(doc, opts).then(function(str) {
+		return processStylesheets(doc, opts, data).then(function(str) {
 			if (str) data.css += str;
 		});
 	}).then(function() {
@@ -85,7 +89,7 @@ function processDocument(doc, opts) {
 	});
 }
 
-function prepareImports(doc, opts) {
+function prepareImports(doc, opts, data) {
 	var path = URL.parse(doc.baseURI).pathname;
 	var docRoot = Path.dirname(path);
 
@@ -98,6 +102,7 @@ function prepareImports(doc, opts) {
 	return Promise.all(allLinks.map(function(node) {
 		var src = node.getAttribute('href');
 		if (filterByName(src, opts.ignore)) return Promise.resolve();
+		data.imports.push(src);
 		src = Path.join(docRoot, src);
 		return loadDom(src, opts.root).then(function(idoc) {
 			var iopts = Object.assign({}, opts, {
@@ -131,7 +136,7 @@ function prepareImports(doc, opts) {
 	}));
 }
 
-function processScripts(doc, opts) {
+function processScripts(doc, opts, data) {
 	var docRoot = getRelativePath(doc);
 	var astRoot;
 	if (opts.js) {
@@ -153,6 +158,7 @@ function processScripts(doc, opts) {
 				node.remove();
 				return;
 			}
+			data.scripts.push(src);
 			src = Path.join(docRoot, src);
 			p = p.then(function() {
 				return readFile(src);
@@ -176,7 +182,7 @@ function processScripts(doc, opts) {
 	});
 }
 
-function processStylesheets(doc, opts) {
+function processStylesheets(doc, opts, data) {
 	var path = URL.parse(doc.baseURI).pathname;
 	var docRoot = Path.dirname(path);
 	var astRoot;
@@ -201,6 +207,7 @@ function processStylesheets(doc, opts) {
 				node.remove();
 				return;
 			}
+			data.stylesheets.push(src);
 			src = Path.join(docRoot, src);
 			p = p.then(function() {
 				return readFile(src);
