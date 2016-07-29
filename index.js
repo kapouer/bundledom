@@ -12,7 +12,7 @@ var URL = require('url');
 
 module.exports = bundledom;
 
-function bundledom(path, opts) {
+function bundledom(path, opts, cb) {
 	opts = Object.assign({
 		prepend: [],
 		append: [],
@@ -58,10 +58,13 @@ function bundledom(path, opts) {
 				});
 			}
 			return p.then(function() {
+				if (cb) cb(null, data);
 				return data;
 			});
 		});
 	});
+	if (cb) p = p.catch(cb);
+	else return p;
 }
 
 function processDocument(doc, opts) {
