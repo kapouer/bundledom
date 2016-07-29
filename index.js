@@ -45,6 +45,8 @@ function bundledom(path, opts) {
 						if (opts.cli) console.warn("html saved to", htmlPath);
 					});
 				});
+			} else {
+				data.html = doc.documentElement.outerHTML;
 			}
 			if (opts.js) {
 				p = p.then(function() {
@@ -53,12 +55,10 @@ function bundledom(path, opts) {
 						if (opts.cli) console.warn("js saved to", jsPath)
 					});
 				});
-			} else {
-				p = p.then(function() {
-					return data;
-				});
 			}
-			return p;
+			return p.then(function() {
+				return data;
+			});
 		});
 	});
 }
