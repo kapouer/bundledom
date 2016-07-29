@@ -60,6 +60,23 @@ public/templates/index.html
 Paths are relative to the input file path.
 
 
+API
+---
+
+`bundledom(path, opts, cb)`
+
+- path: the path to the html file to process
+- opts can contain `exclude`, `ignore`, `prepend`, `append` arrays, and a `root`
+option to set the base directory for paths.
+
+If cb is omitted, returns a promise.
+
+Returns an object with following properties:
+
+- js, css, html: the resulting js, css, html
+- scripts, stylesheets, imports: the lists of processed files
+
+
 Help
 ----
 
