@@ -1,10 +1,11 @@
+var debug = require('debug')('bundledom');
+
 var postcss = require('postcss');
 var postcssUrl = require("postcss-url");
 var uglify = require('uglify-js');
 var autoprefixer = require('autoprefixer');
 var csswring = require('csswring');
 var jsdom = require('jsdom');
-var debug = require('debug')('bundledom');
 
 var fs = require('fs');
 var Path = require('path');
