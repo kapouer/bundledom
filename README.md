@@ -8,7 +8,7 @@ Features
 
 * recursively concatenate scripts, styles and html in HTML imports
 * minify scripts and stylesheets
-* autoprefix stylesheets
+* vendor autoprefixing of stylesheets
 * bundle everything in one single js file, or split in js / css.
 * prepend or append additional scripts, styles, or imports
 * exclude or ignore a tag by matching a url substring
@@ -65,9 +65,19 @@ API
 
 `bundledom(path, opts, cb)`
 
-- path: the path to the html file to process
-- opts can contain `exclude`, `ignore`, `prepend`, `append` arrays, and a `root`
-option to set the base directory for paths.
+where `path` is the path of the html file to process,
+and `opts` has these properties:
+
+-	exclude: array of matched strings
+- ignore: array of matched strings
+- append: array of strings
+- prepend: array of strings
+- js: path relative to html file
+- css: path relative to html file
+- html: path relative to root
+- root: path
+
+Strings are matched simply by searching a substring.
 
 If cb is omitted, returns a promise.
 
