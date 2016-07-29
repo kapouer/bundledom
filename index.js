@@ -3,7 +3,7 @@ var postcssUrl = require("postcss-url");
 var uglify = require('uglify-js');
 var autoprefixer = require('autoprefixer');
 var csswring = require('csswring');
-var jsdom = require('jsdom').jsdom;
+var jsdom = require('jsdom');
 var debug = require('debug')('bundledom');
 
 var fs = require('fs');
@@ -37,16 +37,17 @@ function bundledom(path, opts) {
 				});
 			}
 		}).then(function(data) {
+			var html = jsdom.serializeDocument(doc);
 			var p = Promise.resolve();
 			if (opts.html) {
 				p = p.then(function() {
 					var htmlPath = getRelativePath(doc, opts.html);
-					return writeFile(htmlPath, doc.documentElement.outerHTML).then(function() {
+					return writeFile(htmlPath, html).then(function() {
 						if (opts.cli) console.warn("html saved to", htmlPath);
 					});
 				});
 			} else {
-				data.html = doc.documentElement.outerHTML;
+				data.html = html;
 			}
 			if (opts.js) {
 				p = p.then(function() {
@@ -357,7 +358,7 @@ function loadDom(path, basepath) {
 	else basepath = Path.join(basepath, Path.basename(path));
 	return readFile(path).then(function(data) {
 		return new Promise(function(resolve, reject) {
-			jsdom(data, {
+			jsdom.jsdom(data, {
 				url: 'file://' + Path.resolve(basepath),
 				features: {
 					FetchExternalResources: [],
