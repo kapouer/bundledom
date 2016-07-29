@@ -30,6 +30,7 @@
     "dashdash": "^1.14.0",
     "debug": "^2.2.0",
     "jsdom": "^9.4.1",
+    "mkdirp": "^0.5.1",
     "postcss": "^5.0.21",
     "postcss-url": "^5.1.2",
     "uglify-js": "^2.6.2"

@@ -6,6 +6,7 @@ var uglify = require('uglify-js');
 var autoprefixer = require('autoprefixer');
 var csswring = require('csswring');
 var jsdom = require('jsdom');
+var mkdirp = require('mkdirp');
 
 var fs = require('fs');
 var Path = require('path');
@@ -417,9 +418,12 @@ function readFile(path) {
 
 function writeFile(path, data) {
 	return new Promise(function(resolve, reject) {
-		fs.writeFile(path, data, function(err) {
-			if (err) reject(err);
-			else resolve();
+		mkdirp(Path.dirname(path), function(err) {
+			if (err) return reject(err);
+			fs.writeFile(path, data, function(err) {
+				if (err) reject(err);
+				else resolve();
+			});
 		});
 	});
 }
