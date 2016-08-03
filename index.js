@@ -121,7 +121,7 @@ function prepareImports(doc, opts, data) {
 				css: null,
 				js: null
 			});
-			return processDocument(idoc, iopts, data).then(function(data) {
+			return processDocument(idoc, iopts, {}).then(function(data) {
 				var iscript = '\n(' +
 				function(html) {
 					var ownDoc = document.implementation && document.implementation.createHTMLDocument
