@@ -37,7 +37,7 @@
     "postcss": "^5.0.21",
     "postcss-easy-import": "^1.0.1",
     "postcss-url": "^5.1.2",
-    "uglify-js": "^2.6.2"
+    "uglify-js": "^2.7.3"
   },
   "devDependencies": {
     "mocha": "^2.5.3",
