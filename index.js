@@ -2,6 +2,7 @@ var debug = require('debug')('bundledom');
 
 var postcss = require('postcss');
 var postcssUrl = require("postcss-url");
+var postcssImport = require('postcss-easy-import');
 var uglify = require('uglify-js');
 var autoprefixer = require('autoprefixer');
 var csswring = require('csswring');
@@ -248,6 +249,7 @@ function processStylesheets(doc, opts, data) {
 		if (!astRoot) return;
 		var plugins = [
 			postcssUrl({url: postcssRebase}),
+			postcssImport,
 			autoprefixer()
 		];
 		if (!opts.concatenate) plugins.push(csswring({preserveHacks: true}));
