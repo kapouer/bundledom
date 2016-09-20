@@ -207,16 +207,16 @@ function processStylesheets(doc, opts, data) {
 	prependToPivot(allLinks, opts.prepend, 'link', 'href', 'css', {rel: "stylesheet"});
 	appendToPivot(allLinks, opts.append, 'link', 'href', 'css', {rel: "stylesheet"});
 
-	var p = Promise.resolve();
-	allLinks.forEach(function(node) {
+	return Promise.all(allLinks.map(function(node) {
 		var src = node.getAttribute('href');
+		var p = Promise.resolve("");
 		if (src) {
 			if (filterByName(src, opts.ignore)) {
-				return;
+				return p;
 			}
 			if (filterByName(src, opts.exclude)) {
 				node.remove();
-				return;
+				return p;
 			}
 			data.stylesheets.push(src);
 			src = Path.join(docRoot, src);
@@ -229,33 +229,31 @@ function processStylesheets(doc, opts, data) {
 				return node.textContent;
 			});
 		} else {
-			return;
+			return p;
 		}
 		removeNodeSpace(node);
 
-		p = p.then(function(data) {
-			try {
-				var ast = postcss.parse(data, {
-					from: src
-				});
-				if (!astRoot) astRoot = ast;
-				else astRoot.push(ast);
-			} catch(ex) {
-				return Promise.reject(ex);
-			}
-		});
-	});
-	return p.then(function() {
-		if (!astRoot) return;
 		var plugins = [
 			postcssUrl({url: postcssRebase}),
 			postcssImport,
 			autoprefixer()
 		];
 		if (!opts.concatenate) plugins.push(csswring({preserveHacks: true}));
-		return postcss(plugins).process(astRoot, {to: path + '.css'}).then(function(result) {
-			return result.css;
+
+		return p.then(function(data) {
+			try {
+				return postcss(plugins).process(data, {
+					from: src,
+					to: path + '.css'
+				}).then(function(result) {
+					return result.css;
+				});
+			} catch(ex) {
+				return Promise.reject(ex);
+			}
 		});
+	})).then(function(results) {
+		return results.join('\n');
 	});
 }
 
