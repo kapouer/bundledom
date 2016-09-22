@@ -175,6 +175,13 @@ function processScripts(doc, opts, data) {
 				return readFile(src);
 			});
 		} else if (node.textContent) {
+			if (~opts.ignore.indexOf('.')) {
+				return;
+			}
+			if (~opts.exclude.indexOf('.')) {
+				node.remove();
+				return;
+			}
 			src = doc.baseURI;
 			p = p.then(function() {
 				return node.textContent;
@@ -224,6 +231,13 @@ function processStylesheets(doc, opts, data) {
 				return readFile(src);
 			});
 		} else if (node.textContent) {
+			if (~opts.ignore.indexOf('.')) {
+				return;
+			}
+			if (~opts.exclude.indexOf('.')) {
+				node.remove();
+				return;
+			}
 			src = doc.baseURI;
 			p = p.then(function() {
 				return node.textContent;
@@ -290,6 +304,7 @@ function getRelativePath(doc, path) {
 function filterByName(src, list) {
 	if (!list) return;
 	var found = list.some(function(str) {
+		if (str == ".") return false;
 		return ~src.indexOf(str);
 	});
 	if (found) debug("excluded", src);

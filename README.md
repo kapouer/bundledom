@@ -79,6 +79,8 @@ and `opts` has these properties:
 
 Strings are matched simply by searching a substring.
 
+If a string is "." it exludes or ignores script or style tags.
+
 If cb is omitted, returns a promise.
 
 Returns an object with following properties:
