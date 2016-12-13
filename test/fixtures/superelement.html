@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Common files</title>
+	<link href="element.html" rel="import">
+</head>
+<body>
+	<script type="text/template" id="supertemplate">
+			<div class="superelement">test</div>
+		</script>
+		<script>
+			(function() {
+				var ownDoc = (document._currentScript || document.currentScript).ownerDocument;
+				var template = ownDoc.getElementById('supertemplate').textContent;
+				document.body.innerHTML += template;
+			})();
+		</script>
+</body>
+</html>

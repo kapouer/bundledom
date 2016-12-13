@@ -6,8 +6,12 @@ var bundledom = require('..');
 
 function runDom(htmlPath, data) {
 	return new Promise(function(resolve, reject) {
+		var virtualConsole = jsdom.createVirtualConsole();
+		virtualConsole.on('jsdomError', function(err) {
+			reject(err);
+		});
 		jsdom.jsdom(data.html, {
-			virtualConsole: jsdom.createVirtualConsole().sendTo(console),
+			virtualConsole: virtualConsole,
 			url: 'file://' + Path.resolve(htmlPath),
 			features: {
 				FetchExternalResources: ['script'],
@@ -80,4 +84,19 @@ it('should bundle html import in html import and run it', function() {
 		});
 	});
 });
+
+it('should bundle imported element with inner imported element and run it', function() {
+	var filepath = 'test/fixtures/element-in-element.html';
+	return bundledom(filepath).then(function(data) {
+		data.should.have.property('js');
+		data.should.have.property('css');
+		data.should.have.property('html');
+		return runDom(filepath, data).then(function(doc) {
+			should.exist(doc.querySelector('head > style'));
+			should.exist(doc.querySelector('body > .superelement'));
+			should.exist(doc.querySelector('body > .element'));
+		});
+	});
+});
+
 
