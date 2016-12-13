@@ -68,7 +68,7 @@ API
 where `path` is the path of the html file to process,
 and `opts` has these properties:
 
--	exclude: array of matched strings
+- exclude: array of matched strings
 - ignore: array of matched strings
 - append: array of strings
 - prepend: array of strings
@@ -79,7 +79,11 @@ and `opts` has these properties:
 
 Strings are matched simply by searching a substring.
 
-If a string is "." it exludes or ignores script or style tags.
+Tags without src or href attributes can be excluded or ignored by passing a
+dot ".", otherwise they are bundled.
+
+Omitting js, css options skips the insertion of the corresponding tag in the
+html document.
 
 If cb is omitted, returns a promise.
 
