@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Element HTMLImport</title>
+		<link rel="stylesheet" href="element.css" />
+		<script src="element.js"></script>
+	</head>
+	<body>
+		<script type="text/template" id="template">
+			<div class="element">test</div>
+		</script>
+		<script>
+			(function() {
+				var ownDoc = (document._currentScript || document.currentScript).ownerDocument;
+				var template = ownDoc.getElementById('template').textContent;
+				document.body.innerHTML = template;
+			})();
+		</script>
+	</body>
+</html>
