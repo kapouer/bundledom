@@ -123,16 +123,19 @@ function prepareImports(doc, opts, data) {
 				js: null
 			});
 			return processDocument(idoc, iopts, {}).then(function(data) {
+				// make sure no variable can leak to SCRIPT
 				var iscript = '\n(' +
 				function(html) {
-					var ownDoc = document.implementation && document.implementation.createHTMLDocument
+					if (!document._currentScript) document._currentScript = {parentOwner: null};
+					else document._currentScript.parentOwner = document._currentScript.ownerDocument;
+					document._currentScript.ownerDocument =
+						document.implementation && document.implementation.createHTMLDocument
 						? document.implementation.createHTMLDocument('')
 						: document.createElement('iframe').contentWindow.document;
-					ownDoc.documentElement.innerHTML = html;
-					document._currentScript = {
-						ownerDocument: ownDoc
-					};
+					document._currentScript.ownerDocument.documentElement.innerHTML = html;
 					SCRIPT
+					document._currentScript.ownerDocument = document._currentScript.parentOwner;
+					delete document._currentScript.parentOwner;
 				}.toString().replace('SCRIPT', data.js)
 				+ ')(' + JSON.stringify(idoc.documentElement.innerHTML.replace(/[\t\n]*/g, '')) + ');';
 				createSibling(node, 'before', 'script').textContent = iscript;
