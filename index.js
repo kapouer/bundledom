@@ -31,7 +31,9 @@ function bundledom(path, opts, cb) {
 					sheet.type = 'text/css';
 					sheet.textContent = CSS;
 					document.head.appendChild(sheet);
-				}.toString().replace('CSS', JSON.stringify(data.css)) + ')();';
+				}.toString().replace('CSS', function() {
+					return JSON.stringify(data.css);
+				}) + ')();';
 				return data;
 			} else {
 				var cssPath = getRelativePath(doc, opts.css);
@@ -124,8 +126,7 @@ function prepareImports(doc, opts, data) {
 			});
 			return processDocument(idoc, iopts, {}).then(function(data) {
 				// make sure no variable can leak to SCRIPT
-				var iscript = '\n(' +
-				function(html) {
+				var iscript = function(html) {
 					if (!document._currentScript) document._currentScript = {parentOwner: null};
 					else document._currentScript.parentOwner = document._currentScript.ownerDocument;
 					document._currentScript.ownerDocument =
@@ -136,8 +137,12 @@ function prepareImports(doc, opts, data) {
 					SCRIPT
 					document._currentScript.ownerDocument = document._currentScript.parentOwner;
 					delete document._currentScript.parentOwner;
-				}.toString().replace('SCRIPT', data.js)
-				+ ')(' + JSON.stringify(idoc.documentElement.innerHTML.replace(/[\t\n]*/g, '')) + ');';
+				}.toString().replace("SCRIPT", function() {
+					return data.js;
+				});
+				iscript = '\n(' + iscript + ')(' +
+					JSON.stringify(idoc.documentElement.innerHTML.replace(/[\t\n]*/g, ''))
+					+ ');';
 				createSibling(node, 'before', 'script').textContent = iscript;
 				if (data.css) {
 					createSibling(node, 'before', 'style').textContent = data.css;
