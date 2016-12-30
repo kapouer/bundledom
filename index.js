@@ -128,10 +128,8 @@ function prepareImports(doc, opts, data) {
 			return processDocument(idoc, iopts, {}).then(function(data) {
 				// make sure no variable can leak to SCRIPT
 				var iscript = function(html) {
-					if (!document._currentScript) document._currentScript = {
-						parentOwner: document.currentScript && document.currentScript.ownerDocument
-					};
-					else document._currentScript.parentOwner = document._currentScript.ownerDocument;
+					if (!document._currentScript) document._currentScript = {};
+					document._currentScript.parentOwner = (document.currentScript || document._currentScript).ownerDocument;
 					document._currentScript.ownerDocument =
 						document.implementation && document.implementation.createHTMLDocument
 						? document.implementation.createHTMLDocument('')
