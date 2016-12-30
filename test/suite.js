@@ -1,6 +1,7 @@
 var should = require('should');
 var jsdom = require('jsdom');
 var Path = require('path');
+var fs = require('fs');
 
 var bundledom = require('..');
 
@@ -95,6 +96,23 @@ it('should bundle imported element with inner imported element and run it', func
 			should.exist(doc.querySelector('head > style'));
 			should.exist(doc.querySelector('body > .superelement'));
 			should.exist(doc.querySelector('body > .element'));
+		});
+	});
+});
+
+it('should bundle remote stylesheet', function() {
+	return bundledom('test/fixtures/remote.html', {
+		root: 'test/bundles',
+		html: 'remote.html',
+		css: 'remote.css'
+	}).then(function(data) {
+		data.should.have.property('css');
+		return new Promise(function(resolve, reject) {
+			fs.readFile('test/bundles/remote.css', function(err, data) {
+				if (err) return reject(err);
+				data.toString().should.containEql("font-family:Open Sans");
+				return resolve();
+			});
 		});
 	});
 });
