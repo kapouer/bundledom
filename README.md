@@ -14,6 +14,7 @@ Features
 * exclude or ignore a tag by matching a url substring
 * modify the DOM and outputs html
 * download remote stylesheets (new in 1.6.0)
+* allows custom asynchronous DOM modifications (new in 1.6.0)
 
 
 Install
@@ -87,6 +88,7 @@ and `opts` has these properties:
 - css: path relative to html file
 - html: path relative to root
 - root: path
+- custom: function(dom, opts, data) {} returning a promise
 
 Strings are matched simply by searching a substring.
 

@@ -82,7 +82,9 @@ function processDocument(doc, opts, data) {
 		js: "",
 		css: ""
 	});
-	return prepareImports(doc, opts, data).then(function() {
+	return processCustom(doc, opts, data).then(function() {
+		return prepareImports(doc, opts, data);
+	}).then(function() {
 		return processScripts(doc, opts, data).then(function(str) {
 			if (str) data.js += str;
 		});
@@ -93,6 +95,10 @@ function processDocument(doc, opts, data) {
 	}).then(function() {
 		return data;
 	});
+}
+
+function processCustom(doc, opts, data) {
+	if (opts.dom) return opts.dom(doc, opts, data);
 }
 
 function prepareImports(doc, opts, data) {
