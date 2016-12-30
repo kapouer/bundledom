@@ -12,6 +12,7 @@ var mkdirp = require('mkdirp');
 var fs = require('fs');
 var Path = require('path');
 var URL = require('url');
+var got = require('got');
 
 module.exports = bundledom;
 
@@ -227,7 +228,6 @@ function processStylesheets(doc, opts, data) {
 		var src = node.getAttribute('href');
 		var p = Promise.resolve("");
 		if (src) {
-			if (filterRemotes(src)) return p;
 			if (filterByName(src, opts.ignore)) {
 				return p;
 			}
@@ -235,11 +235,21 @@ function processStylesheets(doc, opts, data) {
 				node.remove();
 				return p;
 			}
+
 			data.stylesheets.push(src);
-			src = Path.join(docRoot, src);
-			p = p.then(function() {
-				return readFile(src);
-			});
+			if (filterRemotes(src)) {
+				if (src.startsWith('//')) src = "https:" + src;
+				p = p.then(function() {
+					return got(src).then(function(response) {
+						return response.body.toString();
+					});
+				});
+			} else {
+				src = Path.join(docRoot, src);
+				p = p.then(function() {
+					return readFile(src);
+				});
+			}
 		} else if (node.textContent) {
 			if (~opts.ignore.indexOf('.')) {
 				return;

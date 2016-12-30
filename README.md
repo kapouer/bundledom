@@ -13,6 +13,7 @@ Features
 * prepend or append additional scripts, styles, or imports
 * exclude or ignore a tag by matching a url substring
 * modify the DOM and outputs html
+* download remote stylesheets (new in 1.6.0)
 
 
 Install
