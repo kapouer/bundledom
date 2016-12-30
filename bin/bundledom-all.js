@@ -81,7 +81,7 @@ var p = Promise.resolve();
 
 if (opts.common) p = p.then(function() {
 	return bundledom(Path.join(opts.public, opts.common), common).then(function(data) {
-		exclude = exclude.concat(data.scripts).concat(data.stylesheets);
+		exclude = exclude.concat(data.scripts).concat(data.stylesheets).concat(data.imports);
 	});
 });
 
