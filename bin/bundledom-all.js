@@ -14,7 +14,7 @@ var parser = dash.createParser({options: [
 		help: 'Print this help and exit.'
 	},
 	{
-		names: ['common', 'c'],
+		names: ['common'],
 		type: 'string',
 		help: 'html file with common resources'
 	},
@@ -24,7 +24,7 @@ var parser = dash.createParser({options: [
 		help: 'files to ignore from glob'
 	},
 	{
-		names: ['suffix', 's'],
+		names: ['suffix'],
 		type: 'string',
 		help: 'suffix to append to bundles names (typically, a version number)'
 	},
@@ -39,6 +39,11 @@ var parser = dash.createParser({options: [
 		type: 'string',
 		help: 'bundle dir relative to root dir',
 		default: 'bundles'
+	},
+	{
+		names: ['concatenate', 'c'],
+		type: 'bool',
+		help: 'do not minify'
 	}
 ]});
 
@@ -65,7 +70,8 @@ else suffix = '';
 var common = {
 	js: `${opts.bundles}/common${suffix}.js`,
 	css: `${opts.bundles}/common${suffix}.css`,
-	root: opts.public
+	root: opts.public,
+	concatenate: opts.concatenate
 };
 var exclude = [];
 var prepend = [common.css, common.js];
@@ -103,6 +109,7 @@ p = p.then(function() {
 		var dir = Path.join(opts.bundles, Path.relative(opts.public, Path.dirname(file)));
 		var base = Path.basename(file, '.html');
 		var bdOpts = {
+			concatenate: opts.concatenate,
 			exclude: exclude,
 			prepend: prepend,
 			ignore: ignore,
