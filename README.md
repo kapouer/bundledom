@@ -6,7 +6,7 @@ bundledom -- bundle assets of an html document
 Features
 --------
 
-* recursively concatenate scripts, styles and html in HTML imports
+* recursively concatenate scripts, styles, and link[rel=import]
 * minify scripts and stylesheets
 * vendor autoprefixing of stylesheets
 * bundle everything in one single js file, or split in js / css.
