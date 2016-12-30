@@ -170,6 +170,7 @@ function processScripts(doc, opts, data) {
 	allScripts.forEach(function(node, i) {
 		var src = node.getAttribute('src');
 		if (src) {
+			if (filterRemotes(src)) return;
 			if (filterByName(src, opts.ignore)) {
 				return;
 			}
@@ -226,6 +227,7 @@ function processStylesheets(doc, opts, data) {
 		var src = node.getAttribute('href');
 		var p = Promise.resolve("");
 		if (src) {
+			if (filterRemotes(src)) return p;
 			if (filterByName(src, opts.ignore)) {
 				return p;
 			}
@@ -307,6 +309,10 @@ function getRelativePath(doc, path) {
 	var dir = Path.dirname(URL.parse(doc.baseURI).pathname);
 	if (path) return Path.join(dir, path);
 	else return dir;
+}
+
+function filterRemotes(src) {
+	return /^(https?:)?\/\//.test(src);
 }
 
 function filterByName(src, list) {
