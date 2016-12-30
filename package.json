@@ -4,7 +4,7 @@
   "description": "Bundle and transform javascript files, stylesheets, html imports and update DOM document",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "rm -rf test/bundles; mocha"
   },
   "bin": {
     "bundledom": "bin/bundledom.js",
