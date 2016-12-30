@@ -3,7 +3,7 @@
 var glob = require('glob');
 var Path = require('path');
 
-var bd = require('bundledom');
+var bundledom = require('..');
 
 var dash = require('dashdash');
 
@@ -73,7 +73,7 @@ var ignore = [common.css, common.js];
 var p = Promise.resolve();
 
 if (opts.common) p = p.then(function() {
-	return bd(Path.join(opts.public, opts.common), common).then(function(data) {
+	return bundledom(Path.join(opts.public, opts.common), common).then(function(data) {
 		exclude = exclude.concat(data.scripts).concat(data.stylesheets);
 	});
 });
@@ -110,7 +110,7 @@ p = p.then(function() {
 			html: Path.join(dir, base + '.html')
 		};
 		if (dir != "bundles") bdOpts.root = opts.public;
-		return bd(file, bdOpts);
+		return bundledom(file, bdOpts);
 	}));
 }).then(function(all) {
 	console.log(`Processed ${all.length} files`);
