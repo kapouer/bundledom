@@ -109,7 +109,7 @@ p = p.then(function() {
 			css: Path.join(dir, base + suffix + '.css'),
 			html: Path.join(dir, base + '.html')
 		};
-		if (dir != "bundles") bdOpts.root = opts.public;
+		if (dir != opts.bundles) bdOpts.root = opts.public;
 		return bundledom(file, bdOpts);
 	}));
 }).then(function(all) {
