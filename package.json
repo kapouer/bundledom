@@ -1,13 +1,14 @@
 {
   "name": "bundledom",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "description": "Bundle and transform javascript files, stylesheets, html imports and update DOM document",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
-    "bundledom": "bin/bundledom.js"
+    "bundledom": "bin/bundledom.js",
+    "bundledom-all": "bin/bundledom-all.js"
   },
   "repository": {
     "type": "git",

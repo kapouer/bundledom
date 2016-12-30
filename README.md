@@ -58,6 +58,16 @@ bundledom
 public/templates/index.html
 ```
 
+*new in 1.6.0*
+
+```
+bundledom-all --common common.html --suffix 1.0.0 "templates/*.html"
+```
+it bundles common files then processes all files matching pattern and put
+everything with suffixes in a bundles/ directory.
+
+See `bundledom-all -h` for more command-line options.
+
 Paths are relative to the input file path.
 
 
