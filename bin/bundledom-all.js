@@ -64,7 +64,8 @@ else suffix = '';
 
 var common = {
 	js: `${opts.bundles}/common${suffix}.js`,
-	css: `${opts.bundles}/common${suffix}.css`
+	css: `${opts.bundles}/common${suffix}.css`,
+	root: opts.public
 };
 var exclude = [];
 var prepend = [common.css, common.js];
