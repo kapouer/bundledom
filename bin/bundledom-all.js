@@ -44,6 +44,11 @@ var parser = dash.createParser({options: [
 		names: ['concatenate', 'c'],
 		type: 'bool',
 		help: 'do not minify'
+	},
+	{
+		names: ['custom'],
+		type: 'string',
+		help: 'custom module for dom modifications'
 	}
 ]});
 
@@ -54,6 +59,8 @@ try {
 	console.error(e.toString());
 	opts = {help: true};
 }
+
+var customPlugin = opts.custom && require(opts.custom);
 
 var globPattern = opts._args && opts._args.pop();
 
@@ -109,6 +116,7 @@ p = p.then(function() {
 		var dir = Path.join(opts.bundles, Path.relative(opts.public, Path.dirname(file)));
 		var base = Path.basename(file, '.html');
 		var bdOpts = {
+			custom: customPlugin,
 			concatenate: opts.concatenate,
 			exclude: exclude,
 			prepend: prepend,

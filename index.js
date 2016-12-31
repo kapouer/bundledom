@@ -82,7 +82,10 @@ function processDocument(doc, opts, data) {
 		js: "",
 		css: ""
 	});
-	return processCustom(doc, opts, data).then(function() {
+	var p = Promise.resolve();
+	return p.then(function() {
+		return processCustom(doc, opts, data);
+	}).then(function() {
 		return prepareImports(doc, opts, data);
 	}).then(function() {
 		return processScripts(doc, opts, data).then(function(str) {
@@ -98,7 +101,7 @@ function processDocument(doc, opts, data) {
 }
 
 function processCustom(doc, opts, data) {
-	if (opts.dom) return opts.dom(doc, opts, data);
+	if (opts.custom) return opts.custom(doc, opts, data);
 }
 
 function prepareImports(doc, opts, data) {
