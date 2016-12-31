@@ -6,6 +6,7 @@ var postcssImport = require('postcss-easy-import');
 var uglify = require('uglify-js');
 var autoprefixer = require('autoprefixer');
 var csswring = require('csswring');
+var reporter = require('postcss-reporter');
 var jsdom = require('jsdom');
 var mkdirp = require('mkdirp');
 
@@ -279,7 +280,8 @@ function processStylesheets(doc, opts, data) {
 		var plugins = [
 			postcssUrl({url: postcssRebase}),
 			postcssImport,
-			autoprefixer()
+			autoprefixer(),
+			reporter()
 		];
 		if (!opts.concatenate) plugins.push(csswring({preserveHacks: true}));
 
