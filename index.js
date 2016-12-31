@@ -286,16 +286,12 @@ function processStylesheets(doc, opts, data) {
 		if (!opts.concatenate) plugins.push(csswring({preserveHacks: true}));
 
 		return p.then(function(data) {
-			try {
-				return postcss(plugins).process(data, {
-					from: src,
-					to: path + '.css'
-				}).then(function(result) {
-					return result.css;
-				});
-			} catch(ex) {
-				return Promise.reject(ex);
-			}
+			return postcss(plugins).process(data, {
+				from: src,
+				to: path + '.css'
+			}).then(function(result) {
+				return result.css;
+			});
 		});
 	})).then(function(results) {
 		return results.join('\n');
