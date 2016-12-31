@@ -74,23 +74,28 @@ var suffix = opts.suffix;
 if (suffix) suffix = '-' + suffix;
 else suffix = '';
 
-var common = {
-	js: `${opts.bundles}/common${suffix}.js`,
-	css: `${opts.bundles}/common${suffix}.css`,
-	root: opts.public,
-	concatenate: opts.concatenate
-};
 var exclude = [];
-var prepend = [common.css, common.js];
-var ignore = [common.css, common.js];
+var prepend = [];
+var ignore = [];
 
 var p = Promise.resolve();
 
-if (opts.common) p = p.then(function() {
-	return bundledom(Path.join(opts.public, opts.common), common).then(function(data) {
-		exclude = exclude.concat(data.scripts).concat(data.stylesheets).concat(data.imports);
+if (opts.common) {
+	var commonBase = Path.basename(opts.common, Path.extname(opts.common));
+	var commonOpts = {
+		js: `${opts.bundles}/${commonBase}${suffix}.js`,
+		css: `${opts.bundles}/${commonBase}${suffix}.css`,
+		root: opts.public,
+		concatenate: opts.concatenate
+	};
+	prepend.push(commonOpts.css, commonOpts.js);
+	ignore.push(commonOpts.css, commonOpts.js);
+	p = p.then(function() {
+		return bundledom(Path.join(opts.public, opts.common), commonOpts).then(function(data) {
+			exclude = exclude.concat(data.scripts).concat(data.stylesheets).concat(data.imports);
+		});
 	});
-});
+}
 
 p = p.then(function() {
 	return new Promise(function(resolve, reject) {
