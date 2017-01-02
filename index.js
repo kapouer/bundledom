@@ -145,15 +145,19 @@ function prepareImports(doc, opts, data) {
 			});
 			return processDocument(idoc, iopts, {}).then(function(data) {
 				// make sure no variable can leak to SCRIPT
-				var iscript = function(head, body) {
+				var iscript = function(html) {
 					if (!document._currentScript) document._currentScript = {};
 					document._currentScript.parentOwner = (document.currentScript || document._currentScript).ownerDocument;
 					document._currentScript.ownerDocument =
 						document.implementation && document.implementation.createHTMLDocument
 						? document.implementation.createHTMLDocument('')
 						: document.createElement('iframe').contentWindow.document;
-					document._currentScript.ownerDocument.head.innerHTML = head;
-					document._currentScript.ownerDocument.body.innerHTML = body;
+					try {
+						document._currentScript.ownerDocument.documentElement.innerHTML = html;
+					} catch(ex) {
+						// IE < 10 fallback
+						document._currentScript.ownerDocument.body.innerHTML = html;
+					}
 					SCRIPT
 					document._currentScript.ownerDocument = document._currentScript.parentOwner;
 					delete document._currentScript.parentOwner;
@@ -161,8 +165,7 @@ function prepareImports(doc, opts, data) {
 					return data.js;
 				});
 				iscript = '\n(' + iscript + ')(' +
-					JSON.stringify(idoc.head.innerHTML.replace(/[\t\n]*/g, '')) + ', ' +
-					JSON.stringify(idoc.body.innerHTML.replace(/[\t\n]*/g, ''))
+					JSON.stringify(idoc.documentElement.innerHTML.replace(/[\t\n]*/g, ''))
 					+ ');';
 				createSibling(node, 'before', 'script').textContent = iscript;
 				if (data.css) {
