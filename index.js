@@ -40,7 +40,7 @@ function bundledom(path, opts, cb) {
 			} else {
 				var cssPath = getRelativePath(doc, opts.css);
 				return writeFile(cssPath, data.css).then(function() {
-					if (opts.cli) console.warn("css saved to", cssPath);
+					if (opts.cli) console.warn(opts.css);
 					return data;
 				});
 			}
@@ -51,7 +51,7 @@ function bundledom(path, opts, cb) {
 				p = p.then(function() {
 					var htmlPath = getRelativePath(doc, opts.html);
 					return writeFile(htmlPath, html).then(function() {
-						if (opts.cli) console.warn("html saved to", htmlPath);
+						if (opts.cli) console.warn(opts.html);
 					});
 				});
 			} else {
@@ -61,7 +61,7 @@ function bundledom(path, opts, cb) {
 				p = p.then(function() {
 					var jsPath = getRelativePath(doc, opts.js);
 					return writeFile(jsPath, data.js).then(function() {
-						if (opts.cli) console.warn("js saved to", jsPath)
+						if (opts.cli) console.warn(opts.js);
 					});
 				});
 			}
