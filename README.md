@@ -8,7 +8,8 @@ Features
 
 * recursively concatenate scripts, styles, and link[rel=import]
 * minify scripts and stylesheets
-* vendor autoprefixing of stylesheets
+* vendor autoprefixing of stylesheets, configurable through env, see
+  https://github.com/ai/browserslist
 * bundle everything in one single js file, or split in js / css.
 * prepend or append additional scripts, styles, or imports
 * exclude or ignore a tag by matching a url substring
