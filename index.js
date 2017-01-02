@@ -62,6 +62,12 @@ function bundledom(path, opts, cb) {
 					var jsPath = getRelativePath(doc, opts.js);
 					return writeFile(jsPath, data.js).then(function() {
 						if (opts.cli) console.warn(opts.js);
+						if (data.jsmap) {
+							var jsMapPath = jsPath + '.map';
+							return writeFile(jsMapPath, data.jsmap).then(function() {
+								if (opts.cli) console.warn(opts.js + ".map");
+							});
+						}
 					});
 				});
 			}
@@ -81,7 +87,8 @@ function processDocument(doc, opts, data) {
 		scripts: [],
 		stylesheets: [],
 		js: "",
-		css: ""
+		css: "",
+		jsmap: ""
 	});
 	var p = Promise.resolve();
 	return p.then(function() {
@@ -89,8 +96,9 @@ function processDocument(doc, opts, data) {
 	}).then(function() {
 		return prepareImports(doc, opts, data);
 	}).then(function() {
-		return processScripts(doc, opts, data).then(function(str) {
-			if (str) data.js += str;
+		return processScripts(doc, opts, data).then(function(obj) {
+			if (obj.str) data.js += obj.str;
+			if (obj.map) data.jsmap += obj.map;
 		});
 	}).then(function() {
 		return processStylesheets(doc, opts, data).then(function(str) {
@@ -216,7 +224,7 @@ function processScripts(doc, opts, data) {
 		});
 	});
 	return p.then(function() {
-		return astRoot ? compressAst(astRoot, opts) : "";
+		return astRoot ? compressAst(astRoot, opts) : {str:""};
 	});
 }
 
@@ -312,14 +320,18 @@ function postcssRebase(oldUrl, decl, from, dirname, to, options, result) {
 
 function compressAst(ast, opts) {
 	ast.figure_out_scope();
+	var outputOpts = {
+//		source_map: uglify.SourceMap()
+	};
 	if (opts && !opts.concatenate) {
 		ast.transform(uglify.Compressor());
 		ast.compute_char_frequency();
 		ast.mangle_names();
 	}
-	return ast.print_to_string({
-//			source_map: uglify.SourceMap()
-	}).replace(/^"use strict"/, "");
+	return {
+		str: ast.print_to_string(outputOpts).replace(/^"use strict"/, ""),
+		map: outputOpts.source_map && outputOpts.source_map.toString()
+	};
 }
 
 function getRelativePath(doc, path) {
