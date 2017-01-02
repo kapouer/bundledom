@@ -24,11 +24,6 @@ var parser = dash.createParser({options: [
 		help: 'files to ignore from glob'
 	},
 	{
-		names: ['suffix'],
-		type: 'string',
-		help: 'suffix to append to bundles names (typically, a version number)'
-	},
-	{
 		names: ['public'],
 		type: 'string',
 		help: 'root public dir',
@@ -70,10 +65,6 @@ if (opts.help || !globPattern) {
 	process.exit(0);
 }
 
-var suffix = opts.suffix;
-if (suffix) suffix = '-' + suffix;
-else suffix = '';
-
 var exclude = [];
 var prepend = [];
 var ignore = [];
@@ -83,8 +74,8 @@ var p = Promise.resolve();
 if (opts.common) {
 	var commonBase = Path.basename(opts.common, Path.extname(opts.common));
 	var commonOpts = {
-		js: `${opts.bundles}/${commonBase}${suffix}.js`,
-		css: `${opts.bundles}/${commonBase}${suffix}.css`,
+		js: `${opts.bundles}/${commonBase}.js`,
+		css: `${opts.bundles}/${commonBase}.css`,
 		root: opts.public,
 		concatenate: opts.concatenate
 	};
@@ -126,8 +117,8 @@ p = p.then(function() {
 			exclude: exclude,
 			prepend: prepend,
 			ignore: ignore,
-			js: Path.join(dir, base + suffix + '.js'),
-			css: Path.join(dir, base + suffix + '.css'),
+			js: Path.join(dir, base + '.js'),
+			css: Path.join(dir, base + '.css'),
 			html: Path.join(dir, base + '.html')
 		};
 		if (dir != opts.bundles) bdOpts.root = opts.public;
