@@ -77,7 +77,8 @@ if (opts.common) {
 		js: `${opts.bundles}/${commonBase}.js`,
 		css: `${opts.bundles}/${commonBase}.css`,
 		root: opts.public,
-		concatenate: opts.concatenate
+		concatenate: opts.concatenate,
+		cli: true
 	};
 	prepend.push(commonOpts.css, commonOpts.js);
 	ignore.push(commonOpts.css, commonOpts.js);
@@ -119,7 +120,8 @@ p = p.then(function() {
 			ignore: ignore,
 			js: Path.join(dir, base + '.js'),
 			css: Path.join(dir, base + '.css'),
-			html: Path.join(dir, base + '.html')
+			html: Path.join(dir, base + '.html'),
+			cli: true
 		};
 		if (dir != opts.bundles) bdOpts.root = opts.public;
 		return bundledom(file, bdOpts);
