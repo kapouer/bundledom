@@ -324,9 +324,21 @@ function compressAst(ast, opts) {
 //		source_map: uglify.SourceMap()
 	};
 	if (opts && !opts.concatenate) {
-		ast.transform(uglify.Compressor());
+		Object.assign(outputOpts, {
+			beautify: false,
+			indent_level: 0,
+			comments: false
+		});
+		ast = ast.transform(uglify.Compressor());
+		ast.figure_out_scope();
 		ast.compute_char_frequency();
 		ast.mangle_names();
+	} else {
+		Object.assign(outputOpts, {
+			beautify: true,
+			indent_level: 2,
+			comments: true
+		});
 	}
 	return {
 		str: ast.print_to_string(outputOpts).replace(/^"use strict"/, ""),
