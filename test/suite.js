@@ -100,7 +100,7 @@ it('should bundle imported element with inner imported element and run it', func
 	});
 });
 
-it('should bundle remote stylesheet', function() {
+it('should not bundle remotes', function() {
 	return bundledom('test/fixtures/remote.html', {
 		root: 'test/bundles',
 		html: 'remote.html',
@@ -110,7 +110,26 @@ it('should bundle remote stylesheet', function() {
 		return new Promise(function(resolve, reject) {
 			fs.readFile('test/bundles/remote.css', function(err, data) {
 				if (err) return reject(err);
-				data.toString().should.containEql("font-family:Open Sans");
+				data.toString().should.not.containEql("font-family");
+				return resolve();
+			});
+		});
+	});
+});
+
+it('should bundle remote stylesheet', function() {
+	return bundledom('test/fixtures/remote.html', {
+		root: 'test/bundles',
+		html: 'remote.html',
+		css: 'remote.css',
+		remotes: ['fonts.googleapis.com'],
+		concatenate: true
+	}).then(function(data) {
+		data.should.have.property('css');
+		return new Promise(function(resolve, reject) {
+			fs.readFile('test/bundles/remote.css', function(err, data) {
+				if (err) return reject(err);
+				data.toString().should.containEql("font-family");
 				return resolve();
 			});
 		});
@@ -118,3 +137,21 @@ it('should bundle remote stylesheet', function() {
 });
 
 
+it('should bundle remote script', function() {
+	return bundledom('test/fixtures/remote.html', {
+		root: 'test/bundles',
+		html: 'remote.html',
+		js: 'remote.js',
+		remotes: ['maps.googleapis.com'],
+		concatenate: true
+	}).then(function(data) {
+		data.should.have.property('js');
+		return new Promise(function(resolve, reject) {
+			fs.readFile('test/bundles/remote.js', function(err, data) {
+				if (err) return reject(err);
+				data.toString().should.containEql("google");
+				return resolve();
+			});
+		});
+	});
+});
