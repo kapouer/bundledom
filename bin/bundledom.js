@@ -45,6 +45,11 @@ var parser = dash.createParser({options: [
 		help: 'css bundle file name'
 	},
 	{
+		names: ['remotes'],
+		type: 'arrayOfString',
+		help: 'domains from which styles or scripts can be downloaded'
+	},
+	{
 		names: ['concatenate'],
 		type: 'bool',
 		help: 'do not minify'

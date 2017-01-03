@@ -36,6 +36,11 @@ var parser = dash.createParser({options: [
 		default: 'bundles'
 	},
 	{
+		names: ['remotes'],
+		type: 'arrayOfString',
+		help: 'domains from which styles or scripts can be downloaded'
+	},
+	{
 		names: ['concatenate', 'c'],
 		type: 'bool',
 		help: 'do not minify'
@@ -74,6 +79,7 @@ var p = Promise.resolve();
 if (opts.common) {
 	var commonBase = Path.basename(opts.common, Path.extname(opts.common));
 	var commonOpts = {
+		remotes: opts.remotes,
 		js: `${opts.bundles}/${commonBase}.js`,
 		css: `${opts.bundles}/${commonBase}.css`,
 		root: opts.public,
@@ -113,6 +119,7 @@ p = p.then(function() {
 		var dir = Path.join(opts.bundles, Path.relative(opts.public, Path.dirname(file)));
 		var base = Path.basename(file, '.html');
 		var bdOpts = {
+			remotes: opts.remotes,
 			custom: customPlugin,
 			concatenate: opts.concatenate,
 			exclude: exclude,

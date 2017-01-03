@@ -19,6 +19,7 @@ module.exports = bundledom;
 
 function bundledom(path, opts, cb) {
 	opts = Object.assign({
+		remotes: [],
 		prepend: [],
 		append: [],
 		exclude: [],
@@ -136,6 +137,7 @@ function prepareImports(doc, opts, data) {
 		src = Path.join(docRoot, src);
 		return loadDom(src, opts.root).then(function(idoc) {
 			var iopts = Object.assign({}, opts, {
+				remotes: [],
 				append: [],
 				prepend: [],
 				exclude: [],
@@ -185,6 +187,8 @@ function processScripts(doc, opts, data) {
 		opts.ignore.unshift(opts.js);
 	}
 	var allScripts = doc.queryAll('script').filter(function(node) {
+		var src = node.getAttribute('src');
+		if (src && filterRemotes(src, opts.remotes) == 0) return false;
 		return !node.type || node.type == "text/javascript";
 	});
 	prependToPivot(allScripts, opts.prepend, 'script', 'src', 'js');
@@ -194,7 +198,6 @@ function processScripts(doc, opts, data) {
 	allScripts.forEach(function(node, i) {
 		var src = node.getAttribute('src');
 		if (src) {
-			if (filterRemotes(src)) return;
 			if (filterByName(src, opts.ignore)) {
 				return;
 			}
@@ -203,10 +206,20 @@ function processScripts(doc, opts, data) {
 				return;
 			}
 			data.scripts.push(src);
-			src = Path.join(docRoot, src);
-			p = p.then(function() {
-				return readFile(src);
-			});
+
+			if (filterRemotes(src, opts.remotes) == 1) {
+				if (src.startsWith('//')) src = "https:" + src;
+				p = p.then(function() {
+					return got(src).then(function(response) {
+						return response.body.toString();
+					});
+				});
+			} else {
+				src = Path.join(docRoot, src);
+				p = p.then(function() {
+					return readFile(src);
+				});
+			}
 		} else if (node.textContent) {
 			if (~opts.ignore.indexOf('.')) {
 				return;
@@ -242,7 +255,11 @@ function processStylesheets(doc, opts, data) {
 		opts.ignore.unshift(opts.css);
 	}
 
-	var allLinks = doc.queryAll('link[href][rel="stylesheet"],style');
+	var allLinks = doc.queryAll('link[href][rel="stylesheet"],style').filter(function(node) {
+		var src = node.getAttribute('href');
+		if (src && filterRemotes(src, opts.remotes) == 0) return false;
+		return true;
+	});
 
 	prependToPivot(allLinks, opts.prepend, 'link', 'href', 'css', {rel: "stylesheet"});
 	appendToPivot(allLinks, opts.append, 'link', 'href', 'css', {rel: "stylesheet"});
@@ -260,7 +277,7 @@ function processStylesheets(doc, opts, data) {
 			}
 
 			data.stylesheets.push(src);
-			if (filterRemotes(src)) {
+			if (filterRemotes(src, opts.remotes) == 1) {
 				if (src.startsWith('//')) src = "https:" + src;
 				p = p.then(function() {
 					return got(src).then(function(response) {
@@ -357,8 +374,16 @@ function getRelativePath(doc, path) {
 	else return dir;
 }
 
-function filterRemotes(src) {
-	return /^(https?:)?\/\//.test(src);
+function filterRemotes(src, remotes) {
+	// return -1 for not remote
+	// return 0 for undownloadable remote
+	// return 1 for downloadable remote
+	if (src.startsWith('//')) src = 'https:' + src;
+	var host = URL.parse(src).host;
+	if (!host) return -1;
+	return remotes.some(function(rem) {
+		if (host.indexOf(rem) >= 0) return true;
+	});
 }
 
 function filterByName(src, list) {
