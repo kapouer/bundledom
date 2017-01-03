@@ -14,7 +14,7 @@ Features
 * prepend or append additional scripts, styles, or imports
 * exclude or ignore a tag by matching a url substring
 * modify the DOM and outputs html
-* download remote stylesheets (new in 1.6.0)
+* downloads remote scripts or stylesheets with whitelist (new in 1.7.0)
 * allows custom asynchronous DOM modifications (new in 1.6.0)
 
 
@@ -90,6 +90,7 @@ and `opts` has these properties:
 - html: path relative to root
 - root: path
 - custom: function(dom, opts, data) {} returning a promise
+- remotes: list of allowed remote domains to download from
 
 Strings are matched simply by searching a substring.
 
