@@ -380,9 +380,11 @@ function filterRemotes(src, remotes) {
 	if (src.startsWith('//')) src = 'https:' + src;
 	var host = URL.parse(src).host;
 	if (!host) return -1;
-	return remotes.some(function(rem) {
+	if (!remotes) return 0;
+	if (remotes.some(function(rem) {
 		if (host.indexOf(rem) >= 0) return true;
-	});
+	})) return 1;
+	else return 0;
 }
 
 function filterByName(src, list) {
