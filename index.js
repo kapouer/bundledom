@@ -336,7 +336,7 @@ function postcssRebase(oldUrl, decl, from, dirname, to, options, result) {
 function compressAst(ast, opts) {
 	ast.figure_out_scope();
 	var outputOpts = {
-//		source_map: uglify.SourceMap()
+		source_map: false // uglify.SourceMap()
 	};
 	if (opts && !opts.concatenate) {
 		Object.assign(outputOpts, {
