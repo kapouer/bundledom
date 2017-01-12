@@ -34,7 +34,7 @@
     "dashdash": "^1.14",
     "debug": "^2.2",
     "got": "^6.7",
-    "jsdom": "^9.4",
+    "jsdom": "^9",
     "mkdirp": "^0.5",
     "postcss": "^5.2",
     "postcss-import": "^9.1",
