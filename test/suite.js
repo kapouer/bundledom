@@ -96,6 +96,7 @@ it('should bundle imported element with inner imported element and run it', func
 			should.exist(doc.querySelector('head > style'));
 			should.exist(doc.querySelector('body > .superelement'));
 			should.exist(doc.querySelector('body > .element'));
+			doc.querySelector('body > .element').innerHTML.should.match(/test1\n\s+test2/);
 		});
 	});
 });
