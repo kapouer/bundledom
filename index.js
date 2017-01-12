@@ -37,15 +37,13 @@ function bundledom(path, opts, cb) {
 				}.toString().replace('CSS', function() {
 					return JSON.stringify(data.css);
 				}) + ')();';
-				return data;
 			} else {
 				var cssPath = getRelativePath(doc, opts.css);
 				return writeFile(cssPath, data.css).then(function() {
 					if (opts.cli) console.warn(opts.css);
-					return data;
 				});
 			}
-		}).then(function(data) {
+		}).then(function() {
 			var html = jsdom.serializeDocument(doc);
 			var p = Promise.resolve();
 			if (opts.html) {
