@@ -298,7 +298,9 @@ function processStylesheets(doc, opts, data) {
 		}).join("\n");
 
 		var plugins = [
-			postcssImport({}),
+			postcssImport({
+				plugins: [postcssUrl({url: postcssRebase})]
+			}),
 			postcssUrl({url: postcssRebase}),
 			autoprefixer(),
 			reporter()
