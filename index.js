@@ -166,7 +166,7 @@ function prepareImports(doc, opts, data) {
 					return data.js;
 				});
 				iscript = '\n(' + iscript + ')(' +
-					JSON.stringify(idoc.documentElement.innerHTML.replace(/[\t\n]*/g, ''))
+					JSON.stringify(idoc.documentElement.innerHTML)
 					+ ');';
 				createSibling(node, 'before', 'script').textContent = iscript;
 				if (data.css) {
