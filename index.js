@@ -41,6 +41,12 @@ function bundledom(path, opts, cb) {
 				var cssPath = getRelativePath(doc, opts.css);
 				return writeFile(cssPath, data.css).then(function() {
 					if (opts.cli) console.warn(opts.css);
+					if (data.cssmap) {
+						var cssMapPath = cssPath + '.map';
+						return writeFile(cssMapPath, data.cssmap).then(function() {
+							if (opts.cli) console.warn(opts.css + ".map");
+						});
+					}
 				});
 			}
 		}).then(function() {
@@ -100,8 +106,9 @@ function processDocument(doc, opts, data) {
 			if (obj.map) data.jsmap += obj.map;
 		});
 	}).then(function() {
-		return processStylesheets(doc, opts, data).then(function(str) {
-			if (str) data.css += str;
+		return processStylesheets(doc, opts, data).then(function(obj) {
+			if (obj.css) data.css += obj.css;
+			if (obj.map) data.cssmap += obj.map;
 		});
 	}).then(function() {
 		return data;
@@ -245,7 +252,9 @@ function processScripts(doc, opts, data) {
 
 function processStylesheets(doc, opts, data) {
 	var path = URL.parse(doc.baseURI).pathname;
+	var pathExt = Path.extname(path);
 	var docRoot = Path.dirname(path);
+	path = Path.join(docRoot, Path.basename(path, pathExt));
 	var astRoot;
 	if (opts.css) {
 		opts.append.unshift(opts.css);
@@ -306,9 +315,8 @@ function processStylesheets(doc, opts, data) {
 		if (!opts.concatenate) plugins.push(csswring({preserveHacks: true}));
 		return postcss(plugins).process(data, {
 			from: path,
-			to: path + '.css'
-		}).then(function(result) {
-			return result.css;
+			to: path + '.css',
+			map: false
 		});
 	});
 }
