@@ -2,7 +2,7 @@ var debug = require('debug')('bundledom');
 
 var postcss = require('postcss');
 var postcssUrl = require("postcss-url");
-var postcssImport = require('postcss-easy-import');
+var postcssImport = require('postcss-import');
 var uglify = require('uglify-js');
 var autoprefixer = require('autoprefixer');
 var csswring = require('csswring');
@@ -172,7 +172,7 @@ function prepareImports(doc, opts, data) {
 				if (data.css) {
 					createSibling(node, 'before', 'style').textContent = data.css;
 				}
-				removeNodeSpace(node);
+				removeNodeAndSpaceBefore(node);
 			});
 		});
 	}));
@@ -201,7 +201,7 @@ function processScripts(doc, opts, data) {
 				return;
 			}
 			if (filterByName(src, opts.exclude)) {
-				node.remove();
+				removeNodeAndSpaceBefore(node);
 				return;
 			}
 			data.scripts.push(src);
@@ -224,7 +224,7 @@ function processScripts(doc, opts, data) {
 				return;
 			}
 			if (~opts.exclude.indexOf('.')) {
-				node.remove();
+				removeNodeAndSpaceBefore(node);
 				return;
 			}
 			src = doc.baseURI;
@@ -234,7 +234,7 @@ function processScripts(doc, opts, data) {
 		} else {
 			return;
 		}
-		removeNodeSpace(node);
+		removeNodeAndSpaceBefore(node);
 		p = p.then(function(data) {
 			var ast = uglify.parse(data, {filename: src, toplevel: astRoot});
 			if (!astRoot) astRoot = ast;
@@ -265,65 +265,51 @@ function processStylesheets(doc, opts, data) {
 
 	return Promise.all(allLinks.map(function(node) {
 		var src = node.getAttribute('href');
-		var p = Promise.resolve("");
 		if (src) {
 			if (filterByName(src, opts.ignore)) {
-				return p;
+				return "";
 			}
+			removeNodeAndSpaceBefore(node);
 			if (filterByName(src, opts.exclude)) {
-				node.remove();
-				return p;
+				return "";
 			}
-
 			data.stylesheets.push(src);
 			if (filterRemotes(src, opts.remotes) == 1) {
 				if (src.startsWith('//')) src = "https:" + src;
-				p = p.then(function() {
-					return got(src).then(function(response) {
-						return response.body.toString();
-					});
+				return got(src).then(function(response) {
+					return response.body.toString();
 				});
 			} else {
-				src = Path.join(docRoot, src);
-				p = p.then(function() {
-					return readFile(src);
-				});
+				return `@import url("${src}");`;
 			}
 		} else if (node.textContent) {
 			if (~opts.ignore.indexOf('.')) {
-				return;
+				return "";
 			}
+			removeNodeAndSpaceBefore(node);
 			if (~opts.exclude.indexOf('.')) {
-				node.remove();
-				return;
+				return "";
 			}
-			src = doc.baseURI;
-			p = p.then(function() {
-				return node.textContent;
-			});
-		} else {
-			return p;
+			return node.textContent;
 		}
-		removeNodeSpace(node);
+	})).then(function(all) {
+		var data = all.filter(function(str) {
+			return !!str;
+		}).join("\n");
 
 		var plugins = [
+			postcssImport({}),
 			postcssUrl({url: postcssRebase}),
-			postcssImport,
 			autoprefixer(),
 			reporter()
 		];
 		if (!opts.concatenate) plugins.push(csswring({preserveHacks: true}));
-
-		return p.then(function(data) {
-			return postcss(plugins).process(data, {
-				from: src,
-				to: path + '.css'
-			}).then(function(result) {
-				return result.css;
-			});
+		return postcss(plugins).process(data, {
+			from: path,
+			to: path + '.css'
+		}).then(function(result) {
+			return result.css;
 		});
-	})).then(function(results) {
-		return results.join('\n');
 	});
 }
 
@@ -405,9 +391,9 @@ function filterByExt(list, ext) {
 	});
 }
 
-function removeNodeSpace(node) {
+function removeNodeAndSpaceBefore(node) {
 	var cur = node.previousSibling;
-	while (cur && cur.nodeType == 3) {
+	while (cur && cur.nodeType == 3 && /^\s*$/.test(cur.nodeValue)) {
 		cur.remove();
 		cur = node.previousSibling;
 	}

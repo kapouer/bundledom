@@ -37,7 +37,7 @@
     "jsdom": "^9.4",
     "mkdirp": "^0.5",
     "postcss": "^5.2",
-    "postcss-easy-import": "^1.0",
+    "postcss-import": "^9.1",
     "postcss-reporter": "^3.0",
     "postcss-url": "^5.1",
     "uglify-js": "^2.7"
