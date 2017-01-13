@@ -1,7 +1,7 @@
 bundledom -- bundle assets of an html document
 ==============================================
 
-
+[![Build Status](https://travis-ci.org/kapouer/bundledom.svg?branch=master)](https://travis-ci.org/kapouer/bundledom)
 
 Features
 --------
