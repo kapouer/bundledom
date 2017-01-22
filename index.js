@@ -15,7 +15,7 @@ var Path = require('path');
 var URL = require('url');
 var got = require('got');
 
-var createHTMLDocument = fs.readFileSync(Path.join(__dirname, 'createHTMLDocument.js'));
+var createHTMLDocument = fs.readFileSync(Path.join(__dirname, 'createHTMLDocument.js')).toString();
 
 module.exports = bundledom;
 
