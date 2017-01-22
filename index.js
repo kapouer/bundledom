@@ -15,6 +15,8 @@ var Path = require('path');
 var URL = require('url');
 var got = require('got');
 
+var createHTMLDocument = fs.readFileSync('./createHTMLDocument.js');
+
 module.exports = bundledom;
 
 function bundledom(path, opts, cb) {
@@ -26,7 +28,9 @@ function bundledom(path, opts, cb) {
 		ignore: []
 	}, opts);
 	var p = loadDom(path, opts.root).then(function(doc) {
-		var data = {};
+		var data = {
+			js: createHTMLDocument
+		};
 		return processDocument(doc, opts, data).then(function() {
 			if (!opts.css) {
 				data.js += '\n(' + function() {
