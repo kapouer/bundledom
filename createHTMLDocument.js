@@ -1,16 +1,18 @@
 (function() {
 	var impl = document.implementation;
 	var mother;
-	if (impl && impl.createHTMLDocument) {
-		if (impl.custom) return;
+	if (!impl) impl = document.implementation = {};
+	if (impl.createHTMLDocument) {
+		if (impl.createHTMLDocument.custom) return;
 		mother = impl.createHTMLDocument("");
 	} else {
 		mother = document.createElement('iframe').contentWindow.document;
 	}
-	document.implementation.__proto__.createHTMLDocument = function(str) {
+	function createHTMLDocument(str) {
 		var copy = mother.cloneNode(true);
 		if (str != null) copy.title = str;
 		return copy;
-	};
-	document.implementation.__proto__.createHTMLDocument.custom = true;
+	}
+	createHTMLDocument.custom = true;
+	impl.__proto__.createHTMLDocument = createHTMLDocument;
 })();
