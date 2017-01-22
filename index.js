@@ -95,10 +95,11 @@ function processDocument(doc, opts, data) {
 		imports: [],
 		scripts: [],
 		stylesheets: [],
-		js: "",
-		css: "",
-		jsmap: ""
+		jsmap: "",
+		cssmap: ""
 	});
+	if (!data.js) data.js = "";
+	if (!data.css) data.css = "";
 	var p = Promise.resolve();
 	return p.then(function() {
 		return processCustom(doc, opts, data);
