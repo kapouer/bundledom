@@ -8,7 +8,7 @@
 		mother = document.createElement('iframe').contentWindow.document;
 	}
 	document.implementation.createHTMLDocument = function(str) {
-		var copy = mother.cloneNode();
+		var copy = mother.cloneNode(true);
 		if (str != null) copy.title = str;
 		return copy;
 	};
