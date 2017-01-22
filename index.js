@@ -158,10 +158,7 @@ function prepareImports(doc, opts, data) {
 				var iscript = function(html) {
 					if (!document._currentScript) document._currentScript = {};
 					document._currentScript.parentOwner = (document.currentScript || document._currentScript).ownerDocument;
-					document._currentScript.ownerDocument =
-						document.implementation && document.implementation.createHTMLDocument
-						? document.implementation.createHTMLDocument('')
-						: document.createElement('iframe').contentWindow.document;
+					document._currentScript.ownerDocument = document.implementation.createHTMLDocument("");
 					try {
 						document._currentScript.ownerDocument.documentElement.innerHTML = html;
 					} catch(ex) {
