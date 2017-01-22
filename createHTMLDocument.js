@@ -7,10 +7,10 @@
 	} else {
 		mother = document.createElement('iframe').contentWindow.document;
 	}
-	document.implementation.createHTMLDocument = function(str) {
+	document.implementation.__proto__.createHTMLDocument = function(str) {
 		var copy = mother.cloneNode(true);
 		if (str != null) copy.title = str;
 		return copy;
 	};
-	document.implementation.createHTMLDocument.custom = true;
+	document.implementation.__proto__.createHTMLDocument.custom = true;
 })();
