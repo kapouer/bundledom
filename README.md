@@ -108,6 +108,13 @@ Returns an object with following properties:
 - scripts, stylesheets, imports: the lists of processed files
 
 
+Compatibility
+-------------
+
+Anywhere createHTMLDocument works. For IE 9 to 11, works better with
+[create-html-document-polyfill](https://github.com/kapouer/create-html-document-polyfill)
+
+
 Help
 ----
 
