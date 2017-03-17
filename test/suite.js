@@ -105,7 +105,8 @@ it('should bundle imported element with inner imported element and run it', func
 it('should bundle html import with sub import from another dir', function() {
 	return Promise.all([
 		copyOver('test/fixtures/sub/sub.html', 'test/bundles/sub/sub.html'),
-		copyOver('test/fixtures/sub/sub.js', 'test/bundles/sub/sub.js')
+		copyOver('test/fixtures/sub/sub.js', 'test/bundles/sub/sub.js'),
+		copyOver('test/fixtures/sub/sub.css', 'test/bundles/sub.css')
 	]).then(function() {
 		return bundledom('test/fixtures/import-sub.html', {
 			root: 'test/bundles',
@@ -117,6 +118,7 @@ it('should bundle html import with sub import from another dir', function() {
 				fs.readFile('test/bundles/import-sub.js', function(err, data) {
 					if (err) return reject(err);
 					data.toString().should.match(/.*window\.test=23.*/);
+					data.toString().should.match(/.*mysubselector.*/);
 					return resolve();
 				});
 			});
