@@ -141,7 +141,11 @@ function prepareImports(doc, opts, data) {
 		}
 		data.imports.push(src);
 
-		src = Path.join(docRoot, src);
+		if (opts.root && src.startsWith('/')) {
+			src = Path.join(opts.root, src);
+		} else {
+			src = Path.join(docRoot, src);
+		}
 
 		return loadDom(src, Path.dirname(src)).then(function(idoc) {
 			var iopts = Object.assign({}, opts, {
@@ -219,7 +223,11 @@ function processScripts(doc, opts, data) {
 					});
 				});
 			} else {
-				src = Path.join(docRoot, src);
+				if (opts.root && src.startsWith('/')) {
+					src = Path.join(opts.root, src);
+				} else {
+					src = Path.join(docRoot, src);
+				}
 				p = p.then(function() {
 					return readFile(src);
 				});
@@ -287,6 +295,9 @@ function processStylesheets(doc, opts, data) {
 					return response.body.toString();
 				});
 			} else {
+				if (opts.root && src.startsWith('/')) {
+					src = Path.relative(docRoot, Path.join(opts.root, src));
+				}
 				return `@import url("${src}");`;
 			}
 		} else if (node.textContent) {
