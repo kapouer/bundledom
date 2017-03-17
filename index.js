@@ -140,8 +140,10 @@ function prepareImports(doc, opts, data) {
 			return;
 		}
 		data.imports.push(src);
+
 		src = Path.join(docRoot, src);
-		return loadDom(src, opts.root).then(function(idoc) {
+
+		return loadDom(src, Path.dirname(src)).then(function(idoc) {
 			var iopts = Object.assign({}, opts, {
 				append: [],
 				prepend: [],
