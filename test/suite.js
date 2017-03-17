@@ -103,7 +103,7 @@ it('should bundle imported element with inner imported element and run it', func
 });
 
 it('should bundle html import with sub import from another dir', function() {
-	Promise.all([
+	return Promise.all([
 		copyOver('test/fixtures/sub/sub.html', 'test/bundles/sub/sub.html'),
 		copyOver('test/fixtures/sub/sub.js', 'test/bundles/sub/sub.js')
 	]).then(function() {
@@ -116,7 +116,7 @@ it('should bundle html import with sub import from another dir', function() {
 			return new Promise(function(resolve, reject) {
 				fs.readFile('test/bundles/import-sub.js', function(err, data) {
 					if (err) return reject(err);
-					data.toString().should.contain("console");
+					data.toString().should.match(/.*window\.test=23.*/);
 					return resolve();
 				});
 			});
@@ -187,7 +187,7 @@ function copyOver(from, to) {
 				if (err) return reject(err);
 				mkdirp(Path.dirname(to), function(err) {
 					if (err) return reject(err);
-					fs.writeFile(to, function(err) {
+					fs.writeFile(to, data, function(err) {
 						if (err) return reject(err);
 						resolve();
 					});

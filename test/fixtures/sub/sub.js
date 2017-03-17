@@ -1,1 +1,1 @@
-console.log("here");
+window.test = 23;
