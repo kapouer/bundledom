@@ -2,6 +2,7 @@ var should = require('should');
 var jsdom = require('jsdom');
 var Path = require('path');
 var fs = require('fs');
+var mkdirp = require('mkdirp');
 
 var bundledom = require('..');
 
@@ -101,6 +102,28 @@ it('should bundle imported element with inner imported element and run it', func
 	});
 });
 
+it('should bundle html import with sub import from another dir', function() {
+	Promise.all([
+		copyOver('test/fixtures/sub/sub.html', 'test/bundles/sub/sub.html'),
+		copyOver('test/fixtures/sub/sub.js', 'test/bundles/sub/sub.js')
+	]).then(function() {
+		return bundledom('test/fixtures/import-sub.html', {
+			root: 'test/bundles',
+			html: 'import-sub.html',
+			js: 'import-sub.js'
+		}).then(function(data) {
+			data.should.have.property('js');
+			return new Promise(function(resolve, reject) {
+				fs.readFile('test/bundles/import-sub.js', function(err, data) {
+					if (err) return reject(err);
+					data.toString().should.contain("console");
+					return resolve();
+				});
+			});
+		});
+	});
+});
+
 it('should not bundle remotes', function() {
 	return bundledom('test/fixtures/remote.html', {
 		root: 'test/bundles',
@@ -156,3 +179,20 @@ it('should bundle remote script', function() {
 		});
 	});
 });
+
+function copyOver(from, to) {
+	return new Promise(function(resolve, reject) {
+		fs.unlink(to, function(err) {
+			fs.readFile(from, function(err, data) {
+				if (err) return reject(err);
+				mkdirp(Path.dirname(to), function(err) {
+					if (err) return reject(err);
+					fs.writeFile(to, function(err) {
+						if (err) return reject(err);
+						resolve();
+					});
+				});
+			});
+		});
+	});
+}
