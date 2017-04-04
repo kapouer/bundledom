@@ -13,6 +13,7 @@ Features
 * bundle everything in one single js file, or split in js / css.
 * prepend or append additional scripts, styles, or imports
 * exclude or ignore a tag by matching a url substring
+  new in version 1.8.0: or a minimatch pattern with wildcard (see example below)
 * modify the DOM and outputs html
 * downloads remote scripts or stylesheets with whitelist (new in 1.7.0)
 * allows custom asynchronous DOM modifications (new in 1.6.0)
@@ -63,7 +64,11 @@ public/templates/index.html
 *new in 1.6.0*
 
 ```
-bundledom-all --common common.html --suffix 1.0.0 "templates/*.html"
+bundledom-all
+  --filter "**/excluded-*.*"
+  --common common.html
+  --suffix 1.0.0
+  "templates/*.html"
 ```
 it bundles common files then processes all files matching pattern and put
 everything with suffixes in a bundles/ directory.
