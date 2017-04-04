@@ -24,6 +24,11 @@ var parser = dash.createParser({options: [
 		help: 'files to ignore from glob'
 	},
 	{
+		names: ['filter'],
+		type: 'arrayOfString',
+		help: 'nodes having a src of href matching this regexp will be left untouched'
+	},
+	{
 		names: ['public'],
 		type: 'string',
 		help: 'root public dir',
@@ -72,7 +77,7 @@ if (opts.help || !globPattern) {
 
 var exclude = [];
 var prepend = [];
-var ignore = [];
+var ignore = opts.filter || [];
 
 var p = Promise.resolve();
 
