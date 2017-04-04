@@ -14,6 +14,7 @@ var fs = require('fs');
 var Path = require('path');
 var URL = require('url');
 var got = require('got');
+var minimatch = require("minimatch");
 
 module.exports = bundledom;
 
@@ -396,7 +397,8 @@ function filterByName(src, list) {
 	if (!list) return;
 	var found = list.some(function(str) {
 		if (str == ".") return false;
-		return ~src.indexOf(str);
+		if (str.indexOf('*') >= 0) return minimatch(src, str);
+		else return ~src.indexOf(str);
 	});
 	if (found) debug("excluded", src);
 	return found;
