@@ -61,6 +61,17 @@ it('should ignore a script', function() {
 	});
 });
 
+it('should ignore a script using a wildcard', function() {
+	return bundledom('test/fixtures/exclude.html', {
+		ignore: ['*.js']
+	}).then(function(data) {
+		data.should.have.property('js');
+		data.should.have.property('css');
+		data.should.have.property('html');
+		data.html.indexOf('<script src="b.js"></script>').should.be.greaterThan(0);
+	});
+});
+
 it('should bundle html import and run it', function() {
 	var filepath = 'test/fixtures/import.html';
 	return bundledom(filepath).then(function(data) {
