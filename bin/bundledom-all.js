@@ -82,7 +82,10 @@ var ignore = opts.filter || [];
 var p = Promise.resolve();
 
 if (opts.common) {
-	var commonBase = Path.basename(opts.common, Path.extname(opts.common));
+	var commonBase = Path.join(
+		Path.dirname(opts.common),
+		Path.basename(opts.common, Path.extname(opts.common))
+	);
 	var commonOpts = {
 		remotes: opts.remotes,
 		js: `${opts.bundles}/${commonBase}.js`,
