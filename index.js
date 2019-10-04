@@ -350,13 +350,15 @@ function processStylesheets(doc, opts, data) {
 			postcssFlexBugs,
 			autoprefixer()
 		];
-		if (!opts.concatenate) plugins.push(cssnano({
+		if (opts.minify !== false || !opts.concatenate) {
+			plugins.push(cssnano({
 				preset: ['default', {
 					discardComments: {
 						removeAll: true
 					}
 				}]
 			}));
+		}
 		plugins.push(reporter);
 		return postcss(plugins).process(data, {
 			from: path,
