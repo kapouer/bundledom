@@ -3,11 +3,12 @@ var debug = require('debug')('bundledom');
 var postcss = require('postcss');
 var postcssUrl = require("postcss-url");
 var postcssImport = require('postcss-import');
+var postcssFlexBugs = require('postcss-flexbugs-fixes');
 var babel = require("@babel/core");
 var presetEnv = require.resolve('@babel/preset-env');
 var presetMinify = require.resolve('babel-preset-minify');
 var autoprefixer = require('autoprefixer');
-var csswring = require('csswring');
+var cssnano = require('cssnano');
 var reporter = require('postcss-reporter');
 var jsdom = require('jsdom');
 var mkdirp = require('mkdirp');
@@ -344,28 +345,30 @@ function processStylesheets(doc, opts, data) {
 				plugins: [postcssUrl({url: postcssRebase})]
 			}),
 			postcssUrl({url: postcssRebase}),
-			autoprefixer(),
-			reporter()
+			postcssFlexBugs,
+			autoprefixer()
 		];
-		if (!opts.concatenate) plugins.push(csswring({preserveHacks: true}));
+		if (!opts.concatenate) plugins.push(cssnano({
+				preset: ['default', {
+					discardComments: {
+						removeAll: true
+					}
+				}]
+			}));
+		plugins.push(reporter);
 		return postcss(plugins).process(data, {
 			from: path,
 			to: path + '.css',
-			map: false
+			map: {
+				inline: false
+			}
 		});
 	});
 }
 
-function postcssRebase(oldUrl, decl, from, dirname, to, options, result) {
-	var urlObj = URL.parse(oldUrl);
-	if (urlObj.protocol) return oldUrl;
-	var newPath = oldUrl;
-	if (dirname !== from) {
-		newPath = Path.relative(from, Path.join(dirname, newPath));
-	}
-	newPath = Path.resolve(from, newPath);
-	newPath = Path.relative(to, newPath);
-	return '/' + newPath;
+function postcssRebase(asset) {
+	if (!asset.pathname) return;
+	return asset.relativePath;
 }
 
 function getRelativePath(doc, path) {
