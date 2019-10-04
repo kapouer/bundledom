@@ -3,3 +3,7 @@ function test() {
     return `${val}-`;
   });
 }
+
+async function toto() {
+	return Promise.resolve("wait");
+}
