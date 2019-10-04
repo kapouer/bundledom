@@ -55,6 +55,11 @@ var parser = dash.createParser({options: [
 		help: 'do not minify'
 	},
 	{
+		names: ['minify'],
+		type: 'bool',
+		help: 'minify, overrides concatenate'
+	},
+	{
 		names: ['iife'],
 		type: 'bool',
 		help: 'wrap in iife'
