@@ -181,8 +181,7 @@ it('should bundle remote script', function() {
 		root: 'test/bundles',
 		html: 'remote.html',
 		js: 'remote.js',
-		remotes: ['maps.googleapis.com'],
-		concatenate: true
+		remotes: ['maps.googleapis.com']
 	}).then(function(data) {
 		data.should.have.property('js');
 		return new Promise(function(resolve, reject) {
