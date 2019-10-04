@@ -273,7 +273,9 @@ function processScripts(doc, opts, data) {
 		removeNodeAndSpaceBefore(node);
 		return p.then(function(data) {
 			var code = data.replace(/# sourceMappingURL=.+$/gm, "");
-			return '(function() {\n' + babel.transform(code, opts.babel).code + '\n})();\n';
+			var str = babel.transform(code, opts.babel).code;
+			if (opts.iife) str = '(function() {\n' + str + '\n})();\n';
+			rerturn str;
 		});
 	})).then(function(list) {
 		return {

@@ -96,6 +96,7 @@ and `opts` has these properties:
 - root: path
 - custom: function(dom, opts, data) {} returning a promise
 - remotes: list of allowed remote domains to download from
+- iife: wrap each script in IIFE (default false)
 
 Strings are matched simply by searching a substring.
 
