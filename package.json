@@ -29,7 +29,10 @@
   },
   "homepage": "https://github.com/kapouer/bundledom#readme",
   "dependencies": {
+    "@babel/core": "^7.6.2",
+    "@babel/preset-env": "^7.6.2",
     "autoprefixer": "^6.6",
+    "babel-preset-minify": "^0.5.1",
     "csswring": "^5.1",
     "dashdash": "^1.14",
     "debug": "^2.2",
@@ -40,8 +43,7 @@
     "postcss": "^5.2",
     "postcss-import": "^9.1",
     "postcss-reporter": "^3.0",
-    "postcss-url": "^5.1",
-    "uglify-js": "^2.7"
+    "postcss-url": "^5.1"
   },
   "devDependencies": {
     "mocha": "^2.5.3",

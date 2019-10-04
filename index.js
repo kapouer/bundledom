@@ -3,7 +3,9 @@ var debug = require('debug')('bundledom');
 var postcss = require('postcss');
 var postcssUrl = require("postcss-url");
 var postcssImport = require('postcss-import');
-var uglify = require('uglify-js');
+var babel = require("@babel/core");
+var presetEnv = require.resolve('@babel/preset-env');
+var presetMinify = require.resolve('babel-preset-minify');
 var autoprefixer = require('autoprefixer');
 var csswring = require('csswring');
 var reporter = require('postcss-reporter');
@@ -26,6 +28,26 @@ function bundledom(path, opts, cb) {
 		exclude: [],
 		ignore: []
 	}, opts);
+
+	var babelOpts = {
+		presets: [
+			[presetEnv, {
+				modules: false
+			}]
+		],
+		plugins: [],
+		sourceMaps: false,
+		compact: false
+	};
+
+	if (opts.minify !== false || !opts.concatenate) {
+		babelOpts.presets.push([presetMinify, {
+			builtIns: false // https://github.com/babel/minify/issues/904
+		}]);
+		babelOpts.comments = false;
+	}
+	opts.babel = babelOpts;
+
 	var p = loadDom(path, opts.root).then(function(doc) {
 		var data = {};
 		return processDocument(doc, opts, data).then(function() {
@@ -190,7 +212,6 @@ function prepareImports(doc, opts, data) {
 
 function processScripts(doc, opts, data) {
 	var docRoot = getRelativePath(doc);
-	var astRoot;
 	if (opts.js) {
 		opts.append.unshift(opts.js);
 		opts.ignore.unshift(opts.js);
@@ -203,8 +224,8 @@ function processScripts(doc, opts, data) {
 	prependToPivot(allScripts, opts.prepend, 'script', 'src', 'js');
 	appendToPivot(allScripts, opts.append, 'script', 'src', 'js');
 
-	var p = Promise.resolve();
-	allScripts.forEach(function(node, i) {
+	return Promise.all(allScripts.map(function(node) {
+		var p = Promise.resolve();
 		var src = node.getAttribute('src');
 		if (src) {
 			if (filterByName(src, opts.ignore)) {
@@ -229,7 +250,7 @@ function processScripts(doc, opts, data) {
 				} else {
 					src = Path.join(docRoot, src);
 				}
-				p = p.then(function() {
+				p = p.then(function() {
 					return readFile(src);
 				});
 			}
@@ -249,13 +270,16 @@ function processScripts(doc, opts, data) {
 			return;
 		}
 		removeNodeAndSpaceBefore(node);
-		p = p.then(function(data) {
-			var ast = uglify.parse(data, {filename: src, toplevel: astRoot});
-			if (!astRoot) astRoot = ast;
+		return p.then(function(data) {
+			var code = data.replace(/# sourceMappingURL=.+$/gm, "");
+			return '(function() {\n' + babel.transform(code, opts.babel).code + '\n})();\n';
 		});
-	});
-	return p.then(function() {
-		return astRoot ? compressAst(astRoot, opts) : {str:""};
+	})).then(function(list) {
+		return {
+			str: list.filter(function(str) {
+				return !!str;
+			}).join('')
+		};
 	});
 }
 
@@ -264,7 +288,6 @@ function processStylesheets(doc, opts, data) {
 	var pathExt = Path.extname(path);
 	var docRoot = Path.dirname(path);
 	path = Path.join(docRoot, Path.basename(path, pathExt));
-	var astRoot;
 	if (opts.css) {
 		opts.append.unshift(opts.css);
 		opts.ignore.unshift(opts.css);
@@ -343,34 +366,6 @@ function postcssRebase(oldUrl, decl, from, dirname, to, options, result) {
 	newPath = Path.resolve(from, newPath);
 	newPath = Path.relative(to, newPath);
 	return '/' + newPath;
-}
-
-function compressAst(ast, opts) {
-	ast.figure_out_scope();
-	var outputOpts = {
-		source_map: false // uglify.SourceMap()
-	};
-	if (opts && !opts.concatenate) {
-		Object.assign(outputOpts, {
-			beautify: false,
-			indent_level: 0,
-			comments: false
-		});
-		ast = ast.transform(uglify.Compressor());
-		ast.figure_out_scope();
-		ast.compute_char_frequency();
-		ast.mangle_names();
-	} else {
-		Object.assign(outputOpts, {
-			beautify: true,
-			indent_level: 2,
-			comments: true
-		});
-	}
-	return {
-		str: ast.print_to_string(outputOpts).replace(/^"use strict"/, ""),
-		map: outputOpts.source_map && outputOpts.source_map.toString()
-	};
 }
 
 function getRelativePath(doc, path) {
