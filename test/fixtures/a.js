@@ -1,3 +1,5 @@
 function test() {
-  return "test";
+  return ["a", "b"].map((val) => {
+    return `${val}-`;
+  });
 }
