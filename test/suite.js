@@ -155,6 +155,7 @@ it('should not bundle remotes', function() {
 });
 
 it('should bundle remote stylesheet', function() {
+	this.timeout(10000);
 	return bundledom('test/fixtures/remote.html', {
 		root: 'test/bundles',
 		html: 'remote.html',
@@ -175,6 +176,7 @@ it('should bundle remote stylesheet', function() {
 
 
 it('should bundle remote script', function() {
+	this.timeout(10000);
 	return bundledom('test/fixtures/remote.html', {
 		root: 'test/bundles',
 		html: 'remote.html',
