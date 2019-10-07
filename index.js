@@ -48,7 +48,7 @@ function bundledom(path, opts, cb) {
 		sourceMaps: false,
 		compact: false
 	};
-	var minify = false;
+	var minify = true;
 	if (opts.concatenate !== undefined) minify = !opts.concatenate;
 	if (opts.minify !== undefined) minify = opts.minify;
 	opts.minify = minify;
