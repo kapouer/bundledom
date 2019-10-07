@@ -7,7 +7,6 @@ var postcssFlexBugs = require('postcss-flexbugs-fixes');
 var babel = require("@babel/core");
 var presetEnv = require.resolve('@babel/preset-env');
 var presetMinify = require.resolve('babel-preset-minify');
-var pluginRuntime = require.resolve('@babel/plugin-transform-runtime');
 var autoprefixer = require('autoprefixer');
 var cssnano = require('cssnano');
 var reporter = require('postcss-reporter');
@@ -37,7 +36,7 @@ function bundledom(path, opts, cb) {
 				modules: false
 			}]
 		],
-		plugins: [[pluginRuntime, { corejs: false, helpers: false, regenerator: false}]],
+		plugins: [],
 		sourceMaps: false,
 		compact: false
 	};
