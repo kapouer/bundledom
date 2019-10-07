@@ -4,6 +4,7 @@ var postcss = require('postcss');
 var postcssUrl = require("postcss-url");
 var postcssImport = require('postcss-import');
 var postcssFlexBugs = require('postcss-flexbugs-fixes');
+var babel = require("@babel/core");
 var presetEnv = require.resolve('@babel/preset-env');
 var presetMinify = require.resolve('babel-preset-minify');
 var pluginRuntime = require.resolve('@babel/plugin-transform-runtime');
@@ -12,11 +13,7 @@ var cssnano = require('cssnano');
 var reporter = require('postcss-reporter');
 var jsdom = require('jsdom');
 var mkdirp = require('mkdirp');
-var getStream = require('get-stream');
-var browserify = require("browserify");
-var babelify = require("babelify");
 
-var PassThrough = require('stream').PassThrough;
 var fs = require('fs');
 var Path = require('path');
 var URL = require('url');
@@ -37,14 +34,10 @@ function bundledom(path, opts, cb) {
 	var babelOpts = {
 		presets: [
 			[presetEnv, {
-				modules: 'commonjs'
+				modules: false
 			}]
 		],
-		plugins: [[pluginRuntime, {
-			corejs: false,
-			helpers: false,
-			regenerator: true
-		}]],
+		plugins: [[pluginRuntime, { corejs: false, helpers: false, regenerator: false}]],
 		sourceMaps: false,
 		compact: false
 	};
@@ -237,8 +230,6 @@ function processScripts(doc, opts, data) {
 	prependToPivot(allScripts, opts.prepend, 'script', 'src', 'js');
 	appendToPivot(allScripts, opts.append, 'script', 'src', 'js');
 
-	var sin = new PassThrough();
-
 	return Promise.all(allScripts.map(function(node) {
 		var p = Promise.resolve();
 		var src = node.getAttribute('src');
@@ -286,19 +277,17 @@ function processScripts(doc, opts, data) {
 		}
 		removeNodeAndSpaceBefore(node);
 		return p.then(function(data) {
-			var str = data.replace(/# sourceMappingURL=.+$/gm, "");
+			var code = data.replace(/# sourceMappingURL=.+$/gm, "");
+			var str = babel.transform(code, opts.babel).code;
 			if (opts.iife) str = '(function() {\n' + str + '\n})();\n';
-			sin.write(str);
+			return str;
 		});
-	})).then(function() {
-		sin.end();
-		return getStream(
-			browserify(sin)
-			.transform(babelify.configure(opts.babel))
-			.bundle()
-		).then(function(data) {
-			return {str: data};
-		});
+	})).then(function(list) {
+		return {
+			str: list.filter(function(str) {
+				return !!str;
+			}).join('')
+		};
 	});
 }
 
