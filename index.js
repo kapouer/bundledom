@@ -41,8 +41,12 @@ function bundledom(path, opts, cb) {
 		sourceMaps: false,
 		compact: false
 	};
+	var minify = false;
+	if (opts.concatenate !== undefined) minify = !opts.concatenate;
+	if (opts.minify !== undefined) minify = opts.minify;
+	opts.minify = minify;
 
-	if (opts.minify !== false || !opts.concatenate) {
+	if (opts.minify) {
 		babelOpts.presets.push([presetMinify, {
 			builtIns: false // https://github.com/babel/minify/issues/904
 		}]);
@@ -351,7 +355,7 @@ function processStylesheets(doc, opts, data) {
 			postcssFlexBugs,
 			autoprefixer()
 		];
-		if (opts.minify !== false || !opts.concatenate) {
+		if (opts.minify) {
 			plugins.push(cssnano({
 				preset: ['default', {
 					discardComments: {
