@@ -237,8 +237,6 @@ function processScripts(doc, opts, data) {
 	prependToPivot(allScripts, opts.prepend, 'script', 'src', 'js');
 	appendToPivot(allScripts, opts.append, 'script', 'src', 'js');
 
-	var sin = new PassThrough();
-
 	return Promise.all(allScripts.map(function(node) {
 		var p = Promise.resolve();
 		var src = node.getAttribute('src');
@@ -288,10 +286,13 @@ function processScripts(doc, opts, data) {
 		return p.then(function(data) {
 			var str = data.replace(/# sourceMappingURL=.+$/gm, "");
 			if (opts.iife) str = '(function() {\n' + str + '\n})();\n';
-			sin.write(str);
+			return str;
 		});
-	})).then(function() {
-		sin.end();
+	})).then(function(list) {
+		var data = list.filter((x) => !!x).join('\n');
+		if (!data) return {str: null};
+		var sin = new PassThrough();
+		sin.end(data);
 		return getStream(
 			browserify(sin)
 			.transform(babelify.configure(opts.babel))
