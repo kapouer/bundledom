@@ -19,6 +19,8 @@ var URL = require('url');
 var got = require('got');
 var minimatch = require("minimatch");
 
+var regeneratorRuntime = fs.readFileSync(require.resolve('regenerator-runtime/runtime.js')).toString();
+
 module.exports = bundledom;
 
 function bundledom(path, opts, cb) {
@@ -282,11 +284,16 @@ function processScripts(doc, opts, data) {
 			return str;
 		});
 	})).then(function(list) {
-		return {
-			str: list.filter(function(str) {
-				return !!str;
-			}).join('')
-		};
+		var cat = list.filter(function(str) {
+			return !!str;
+		}).join('');
+		if (cat.indexOf('regeneratorRuntime.') >= 0) {
+			cat = babel.transform(
+				regeneratorRuntime,
+				opts.babel
+			).code + cat;
+		}
+		return {str: cat};
 	});
 }
 

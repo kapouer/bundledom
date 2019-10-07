@@ -44,7 +44,8 @@
     "postcss-flexbugs-fixes": "^4.1.0",
     "postcss-import": "^12.0.1",
     "postcss-reporter": "^6.0.1",
-    "postcss-url": "^9.0.0"
+    "postcss-url": "^9.0.0",
+    "regenerator-runtime": "^0.13.3"
   },
   "devDependencies": {
     "mocha": "^2.5.3",
