@@ -6,7 +6,7 @@ var postcssImport = require('postcss-import');
 var postcssFlexBugs = require('postcss-flexbugs-fixes');
 var babel = require("@babel/core");
 var presetEnv = require.resolve('@babel/preset-env');
-var presetMinify = require.resolve('babel-preset-minify');
+var Uglify = require('uglify-js');
 var autoprefixer = require('autoprefixer');
 var cssnano = require('cssnano');
 var reporter = require('postcss-reporter');
@@ -46,13 +46,6 @@ function bundledom(path, opts, cb) {
 	if (opts.concatenate !== undefined) minify = !opts.concatenate;
 	if (opts.minify !== undefined) minify = opts.minify;
 	opts.minify = minify;
-
-	if (opts.minify) {
-		babelOpts.presets.push([presetMinify, {
-			builtIns: false // https://github.com/babel/minify/issues/904
-		}]);
-		babelOpts.comments = false;
-	}
 	opts.babel = babelOpts;
 
 	var p = loadDom(path, opts.root).then(function(doc) {
@@ -281,6 +274,7 @@ function processScripts(doc, opts, data) {
 			var code = data.replace(/# sourceMappingURL=.+$/gm, "");
 			var str = babel.transform(code, opts.babel).code;
 			if (opts.iife) str = '(function() {\n' + str + '\n})();\n';
+			if (opts.minify) str = compress(str);
 			return str;
 		});
 	})).then(function(list) {
@@ -288,13 +282,21 @@ function processScripts(doc, opts, data) {
 			return !!str;
 		}).join('');
 		if (cat.indexOf('regeneratorRuntime.') >= 0) {
-			cat = babel.transform(
+			var tr = babel.transform(
 				regeneratorRuntime,
 				opts.babel
-			).code + cat;
+			).code;
+			if (opts.minify) tr = compress(tr);
+			cat = tr + cat;
 		}
 		return {str: cat};
 	});
+}
+
+function compress(str) {
+	var result = Uglify.minify(str);
+	if (result.error) console.error(result.error);
+	return result.code;
 }
 
 function processStylesheets(doc, opts, data) {

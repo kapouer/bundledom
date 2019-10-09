@@ -32,7 +32,6 @@
     "@babel/core": "^7.6.2",
     "@babel/preset-env": "^7.6.2",
     "autoprefixer": "^9.6.1",
-    "babel-preset-minify": "^0.5.1",
     "cssnano": "^4.1.10",
     "dashdash": "^1.14",
     "debug": "^2.2",
@@ -45,7 +44,8 @@
     "postcss-import": "^12.0.1",
     "postcss-reporter": "^6.0.1",
     "postcss-url": "^9.0.0",
-    "regenerator-runtime": "^0.13.3"
+    "regenerator-runtime": "^0.13.3",
+    "uglify-js": "^3.6.1"
   },
   "devDependencies": {
     "mocha": "^2.5.3",
