@@ -38,7 +38,10 @@ function bundledom(path, opts, cb) {
 				modules: false
 			}]
 		],
-		plugins: ["@babel/plugin-proposal-class-properties"],
+		plugins: [
+			"@babel/plugin-proposal-class-properties",
+			"@babel/plugin-proposal-optional-chaining"
+		],
 		sourceMaps: false,
 		compact: false
 	};
