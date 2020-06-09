@@ -293,6 +293,7 @@ function processScripts(doc, opts, data) {
 		virtuals.bundle = bundle;
 		return rollup.rollup({
 			input: 'bundle',
+			context: 'window',
 			plugins: [
 				rollupCommonjs(),
 				rollupVirtual(virtuals),
