@@ -30,7 +30,10 @@ function runDom(htmlPath, data) {
 	});
 }
 
-it('should do the most simplest basic test', function() {
+describe("test suite", function() {
+this.timeout(10000);
+
+it('should do the most simplest basic js test', function() {
 	return bundledom('test/fixtures/basic.html', {
 		exclude: []
 	}).then(function(data) {
@@ -192,6 +195,8 @@ it('should bundle remote script', function() {
 			});
 		});
 	});
+});
+
 });
 
 function copyOver(from, to) {
