@@ -4,22 +4,25 @@ const postcss = require('postcss');
 const postcssUrl = require("postcss-url");
 const postcssImport = require('postcss-import');
 const postcssFlexBugs = require('postcss-flexbugs-fixes');
-const babel = require("@babel/core");
 const presetEnv = require.resolve('@babel/preset-env');
-const Uglify = require('uglify-js');
 const autoprefixer = require('autoprefixer');
 const cssnano = require('cssnano');
+const rollup = require('rollup');
+const rollupBabel = require('@rollup/plugin-babel');
+const rollupTerser = require('rollup-plugin-terser');
+const rollupVirtual = require('@rollup/plugin-virtual');
+const rollupCommonjs = require('@rollup/plugin-commonjs');
 const reporter = require('postcss-reporter');
 const jsdom = require('jsdom');
 const mkdirp = require('mkdirp');
+const MaxWorkers = Math.min(require('os').cpus().length - 1, 4);
 
 const fs = require('fs');
 const Path = require('path');
 const URL = require('url');
 const got = require('got');
-const minimatch = require("minimatch");
 
-const regeneratorRuntime = fs.readFileSync(require.resolve('regenerator-runtime/runtime.js')).toString();
+const minimatch = require("minimatch");
 
 module.exports = bundledom;
 
@@ -42,8 +45,8 @@ function bundledom(path, opts, cb) {
 			"@babel/plugin-proposal-class-properties",
 			"@babel/plugin-proposal-optional-chaining"
 		],
-		sourceMaps: false,
-		compact: false
+		compact: false,
+		babelHelpers: 'bundled'
 	};
 	let minify = true;
 	if (opts.concatenate !== undefined) minify = !opts.concatenate;
@@ -55,7 +58,7 @@ function bundledom(path, opts, cb) {
 		const data = {};
 		return processDocument(doc, opts, data).then(function() {
 			if (!opts.css) {
-				data.js += '\n(' + function() {
+				if (data.css) data.js += '\n(' + function() {
 					const sheet = document.createElement('style');
 					sheet.type = 'text/css';
 					sheet.textContent = CSS;
@@ -221,14 +224,20 @@ function processScripts(doc, opts, data) {
 	const allScripts = doc.queryAll('script').filter(function(node) {
 		const src = node.getAttribute('src');
 		if (src && filterRemotes(src, opts.remotes) == 0) return false;
-		return !node.type || node.type == "text/javascript";
+		return !node.type || node.type == "text/javascript" || node.type == "module";
 	});
 	prependToPivot(allScripts, opts.prepend, 'script', 'src', 'js');
 	appendToPivot(allScripts, opts.append, 'script', 'src', 'js');
 
-	return Promise.all(allScripts.map(function(node) {
+	const entries = [];
+
+
+	return Promise.all(allScripts.map(function(node, i) {
 		let p = Promise.resolve();
-		let src = node.getAttribute('src');
+
+		const src = node.getAttribute('src');
+		const name = "node" + i;
+
 		if (src) {
 			if (filterByName(src, opts.ignore)) {
 				return;
@@ -240,20 +249,20 @@ function processScripts(doc, opts, data) {
 			data.scripts.push(src);
 
 			if (filterRemotes(src, opts.remotes) == 1) {
-				if (src.startsWith('//')) src = "https:" + src;
 				p = p.then(function() {
-					return got(src).then(function(response) {
-						return response.body.toString();
+					return got((src.startsWith('//') ? "https:" : "") + src).then(function(response) {
+						entries.push({
+							name: name,
+							data: response.body.toString()
+						});
 					});
 				});
 			} else {
-				if (opts.root && src.startsWith('/')) {
-					src = Path.join(opts.root, src);
-				} else {
-					src = Path.join(docRoot, src);
-				}
-				p = p.then(function() {
-					return readFile(src);
+				entries.push({
+					name: name,
+					path: opts.root && src.startsWith('/')
+						? Path.join(opts.root, src)
+						: Path.join(docRoot, src)
 				});
 			}
 		} else if (node.textContent) {
@@ -264,41 +273,52 @@ function processScripts(doc, opts, data) {
 				removeNodeAndSpaceBefore(node);
 				return;
 			}
-			src = doc.baseURI;
-			p = p.then(function() {
-				return node.textContent;
+			const nodeIndex = Array.from(node.parentNode.children).indexOf(node);
+			entries.push({
+				name: name,
+				data: node.textContent
 			});
 		} else {
 			return;
 		}
 		removeNodeAndSpaceBefore(node);
-		return p.then(function(data) {
-			const code = data.replace(/# sourceMappingURL=.+$/gm, "");
-			let str = babel.transform(code, opts.babel).code;
-			if (opts.iife) str = '(function() {\n' + str + '\n})();\n';
-			if (opts.minify) str = compress(str);
-			return str;
+		return p;
+	})).then(function() {
+		if (entries.length == 0) return {};
+		const virtuals = {};
+		const bundle = entries.map(function(entry) {
+			const path = entry.path || entry.name;
+			if (entry.data) virtuals[entry.name] = entry.data;
+			return `import "${path}";`
+		}).join('\n');
+		virtuals.bundle = bundle;
+		return rollup.rollup({
+			input: 'bundle',
+			plugins: [
+				rollupCommonjs(),
+				rollupVirtual(virtuals),
+				rollupBabel.babel(opts.babel),
+				opts.minify ? rollupTerser.terser({
+					numWorkers: MaxWorkers
+				}) : null
+			]
+		}).then(function(bundle) {
+			return bundle.generate({
+				format: 'iife'
+			});
+		}).then(function(result) {
+			const codeList = [];
+			const mapList = [];
+			result.output.forEach(function(chunk) {
+				if (chunk.code) codeList.push(chunk.code);
+				if (chunk.map) mapList.push(chunk.map);
+			});
+			return {
+				str: codeList.join('\n'),
+				map: mapList.join('\n')
+			};
 		});
-	})).then(function(list) {
-		let cat = list.filter(function(str) {
-			return !!str;
-		}).join('');
-		if (cat.indexOf('regeneratorRuntime.') >= 0) {
-			let tr = babel.transform(
-				regeneratorRuntime,
-				opts.babel
-			).code;
-			if (opts.minify) tr = compress(tr);
-			cat = tr + cat;
-		}
-		return {str: cat};
 	});
-}
-
-function compress(str) {
-	const result = Uglify.minify(str);
-	if (result.error) console.error(result.error);
-	return result.code;
 }
 
 function processStylesheets(doc, opts, data) {
@@ -356,6 +376,7 @@ function processStylesheets(doc, opts, data) {
 		const data = all.filter(function(str) {
 			return !!str;
 		}).join("\n");
+		if (!data) return {};
 
 		const plugins = [
 			postcssImport({

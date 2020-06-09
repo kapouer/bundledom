@@ -1,7 +1,7 @@
 bundledom -- bundle assets of an html document
 ==============================================
 
-* Warning this is for bundling old web apps with modern tools without any kind of modules system *
+New in version 3: uses rollup for bundling, and still supports old-style bundling.
 
 Features
 --------
@@ -17,6 +17,7 @@ Features
 * modify the DOM and outputs html
 * downloads remote scripts or stylesheets with whitelist (new in 1.7.0)
 * allows custom asynchronous DOM modifications (new in 1.6.0)
+* any kind of modules are supported, thanks to rollup
 
 
 Install
