@@ -71,7 +71,7 @@ var globPattern = opts._args && opts._args.pop();
 
 if (opts.help || !globPattern) {
 	var help = parser.help({includeEnv: true}).trimRight();
-	console.log(`usage: bundle --ignore google-*.html --common common.html **/*.html\n${help}`);
+	console.log(`usage: bundle --ignore myfile-*.html --common common.html **/*.html\n${help}`);
 	process.exit(0);
 }
 
