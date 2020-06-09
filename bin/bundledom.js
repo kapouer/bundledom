@@ -1,6 +1,5 @@
 #!/usr/bin/node
 
-var Path = require('path');
 var dash = require('dashdash');
 
 var parser = dash.createParser({options: [
