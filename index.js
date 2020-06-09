@@ -273,7 +273,6 @@ function processScripts(doc, opts, data) {
 				removeNodeAndSpaceBefore(node);
 				return;
 			}
-			const nodeIndex = Array.from(node.parentNode.children).indexOf(node);
 			entries.push({
 				name: name,
 				data: node.textContent
