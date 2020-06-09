@@ -1,5 +1,3 @@
-function test() {
-  return ["a", "b"].map((val) => {
-    return `${val}-`;
-  });
-}
+(function() {
+  window.test = 1;
+})();

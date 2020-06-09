@@ -1,3 +1,3 @@
-function test() {
-  return "test";
-}
+(function test() {
+  window.test = 2;
+})();
