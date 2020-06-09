@@ -60,11 +60,6 @@ var parser = dash.createParser({options: [
 		help: 'minify, overrides concatenate'
 	},
 	{
-		names: ['iife'],
-		type: 'bool',
-		help: 'wrap in iife'
-	},
-	{
 		names: ['root'],
 		type: 'string',
 		help: 'root directory instead of dirname(html file path)'
