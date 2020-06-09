@@ -53,6 +53,18 @@ it('should work without anything to do', function() {
 	});
 });
 
+it('should support es modules', function() {
+	return bundledom('test/fixtures/esm.html', {
+		exclude: [],
+		concatenate: true
+	}).then(function(data) {
+		data.should.have.property('js');
+		data.js.trim().should.startWith('(function (');
+		data.js.includes('emptyObject').should.be.true();
+		data.should.have.property('html');
+	});
+});
+
 it('should ignore a script', function() {
 	return bundledom('test/fixtures/exclude.html', {
 		ignore: ['b.js']
