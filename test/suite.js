@@ -192,18 +192,22 @@ it('should bundle remote stylesheet', function() {
 
 it('should bundle remote script', function() {
 	this.timeout(10000);
-	return bundledom('test/fixtures/remote.html', {
-		root: 'test/bundles',
-		html: 'remote.html',
-		js: 'remote.js',
-		remotes: ['maps.googleapis.com']
-	}).then(function(data) {
-		data.should.have.property('js');
-		return new Promise(function(resolve, reject) {
-			fs.readFile('test/bundles/remote.js', function(err, data) {
-				if (err) return reject(err);
-				data.toString().should.containEql("google");
-				return resolve();
+	return Promise.all([
+		copyOver('test/fixtures/usejquery.js', 'test/bundles/usejquery.js')
+	]).then(function() {
+		return bundledom('test/fixtures/remote.html', {
+			root: 'test/bundles',
+			html: 'remote.html',
+			js: 'remote.js',
+			remotes: ['ajax.googleapis.com']
+		}).then(function(data) {
+			data.should.have.property('js');
+			return new Promise(function(resolve, reject) {
+				fs.readFile('test/bundles/remote.js', function(err, data) {
+					if (err) return reject(err);
+					data.toString().should.containEql("jQuery");
+					return resolve();
+				});
 			});
 		});
 	});
