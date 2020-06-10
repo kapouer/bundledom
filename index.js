@@ -229,6 +229,7 @@ function processScripts(doc, opts, data) {
 	appendToPivot(allScripts, opts.append, 'script', 'src', 'js');
 
 	const entries = [];
+	const remotes = {};
 
 
 	return Promise.all(allScripts.map(function(node, i) {
@@ -248,12 +249,13 @@ function processScripts(doc, opts, data) {
 			data.scripts.push(src);
 
 			if (filterRemotes(src, opts.remotes) == 1) {
+				entries.push({
+					name: name,
+					remote: true
+				});
 				p = p.then(function() {
 					return got((src.startsWith('//') ? "https:" : "") + src).then(function(response) {
-						entries.push({
-							name: name,
-							data: response.body.toString()
-						});
+						remotes[name] = response.body.toString();
 					});
 				});
 			} else {
@@ -286,7 +288,8 @@ function processScripts(doc, opts, data) {
 		const virtuals = {};
 		const bundle = entries.map(function(entry) {
 			const path = entry.path || entry.name;
-			if (entry.data) virtuals[entry.name] = entry.data;
+			if (entry.remote) virtuals[entry.name] = remotes[entry.name];
+			else if (entry.data) virtuals[entry.name] = entry.data;
 			return `import "${path}";`
 		}).join('\n');
 		virtuals.bundle = bundle;
