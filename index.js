@@ -268,7 +268,6 @@ function processScripts(doc, opts, data) {
 				removeNodeAndSpaceBefore(node);
 				return;
 			}
-			src = doc.baseURI;
 			p = p.then(function() {
 				return node.textContent;
 			});
