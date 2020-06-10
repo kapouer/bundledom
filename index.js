@@ -54,6 +54,7 @@ function bundledom(path, opts, cb) {
 	opts.babel = babelOpts;
 
 	let p = loadDom(path, opts.root).then(function(dom) {
+		opts.basepath = dom.basepath;
 		const data = {};
 		const doc = dom.window.document;
 		return processDocument(doc, opts, data).then(function() {
@@ -67,7 +68,7 @@ function bundledom(path, opts, cb) {
 					return JSON.stringify(data.css);
 				}) + ')();';
 			} else {
-				const cssPath = getRelativePath(dom.window.document, opts.css);
+				const cssPath = getRelativePath(opts.basepath, opts.css);
 				return writeFile(cssPath, data.css).then(function() {
 					if (opts.cli) console.warn(opts.css);
 					if (data.cssmap) {
@@ -83,7 +84,7 @@ function bundledom(path, opts, cb) {
 			let p = Promise.resolve();
 			if (opts.html) {
 				p = p.then(function() {
-					const htmlPath = getRelativePath(doc, opts.html);
+					const htmlPath = getRelativePath(opts.basepath, opts.html);
 					return writeFile(htmlPath, html).then(function() {
 						if (opts.cli) console.warn(opts.html);
 					});
@@ -93,7 +94,7 @@ function bundledom(path, opts, cb) {
 			}
 			if (opts.js) {
 				p = p.then(function() {
-					const jsPath = getRelativePath(doc, opts.js);
+					const jsPath = getRelativePath(opts.basepath, opts.js);
 					return writeFile(jsPath, data.js).then(function() {
 						if (opts.cli) console.warn(opts.js);
 						if (data.jsmap) {
@@ -149,8 +150,7 @@ function processCustom(doc, opts, data) {
 }
 
 function prepareImports(doc, opts, data) {
-	const path = URL.parse(doc.baseURI).pathname;
-	const docRoot = Path.dirname(path);
+	const docRoot = Path.dirname(opts.basepath);
 
 	const allLinks = Array.from(doc.querySelectorAll('link[href][rel="import"]'));
 
@@ -182,7 +182,8 @@ function prepareImports(doc, opts, data) {
 				exclude: [],
 				ignore: [],
 				css: null,
-				js: null
+				js: null,
+				basepath: idom.basepath
 			});
 			const idoc = idom.window.document;
 			return processDocument(idoc, iopts, {}).then(function(data) {
@@ -217,7 +218,7 @@ function prepareImports(doc, opts, data) {
 }
 
 function processScripts(doc, opts, data) {
-	const docRoot = getRelativePath(doc);
+	const docRoot = getRelativePath(opts.basepath);
 	if (opts.js) {
 		opts.append.unshift(opts.js);
 		opts.ignore.unshift(opts.js);
@@ -325,7 +326,7 @@ function processScripts(doc, opts, data) {
 }
 
 function processStylesheets(doc, opts, data) {
-	let path = URL.parse(doc.baseURI).pathname;
+	let path = opts.basepath;
 	const pathExt = Path.extname(path);
 	const docRoot = Path.dirname(path);
 	path = Path.join(docRoot, Path.basename(path, pathExt));
@@ -414,8 +415,8 @@ function postcssRebase(asset) {
 	return asset.relativePath;
 }
 
-function getRelativePath(doc, path) {
-	const dir = Path.dirname(URL.parse(doc.baseURI).pathname);
+function getRelativePath(basepath, path) {
+	const dir = Path.dirname(basepath);
 	if (path) return Path.join(dir, path);
 	else return dir;
 }
@@ -526,9 +527,15 @@ function loadDom(path, basepath) {
 	if (!basepath) basepath = path;
 	else basepath = Path.join(basepath, Path.basename(path));
 	return readFile(path).then(function(data) {
-		return new JSDOM(data, {
-			url: 'file://' + Path.resolve(basepath)
+		const abspath = Path.resolve(basepath);
+		const dom = new JSDOM(data, {
+			url: URL.format({
+				protocol: 'file:',
+				pathname: abspath
+			})
 		});
+		dom.basepath = abspath;
+		return dom;
 	});
 }
 
