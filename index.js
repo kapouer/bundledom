@@ -10,7 +10,7 @@ var Uglify = require('uglify-js');
 var autoprefixer = require('autoprefixer');
 var cssnano = require('cssnano');
 var reporter = require('postcss-reporter');
-var jsdom = require('jsdom');
+var JSDOM = require('jsdom').JSDOM;
 var mkdirp = require('mkdirp');
 
 var fs = require('fs');
@@ -51,8 +51,9 @@ function bundledom(path, opts, cb) {
 	opts.minify = minify;
 	opts.babel = babelOpts;
 
-	var p = loadDom(path, opts.root).then(function(doc) {
+	var p = loadDom(path, opts.root).then(function(dom) {
 		var data = {};
+		var doc = dom.window.document;
 		return processDocument(doc, opts, data).then(function() {
 			if (!opts.css) {
 				data.js += '\n(' + function() {
@@ -76,7 +77,7 @@ function bundledom(path, opts, cb) {
 				});
 			}
 		}).then(function() {
-			var html = jsdom.serializeDocument(doc);
+			var html = dom.serialize();
 			var p = Promise.resolve();
 			if (opts.html) {
 				p = p.then(function() {
@@ -150,7 +151,7 @@ function prepareImports(doc, opts, data) {
 	var path = URL.parse(doc.baseURI).pathname;
 	var docRoot = Path.dirname(path);
 
-	var allLinks = doc.queryAll('link[href][rel="import"]');
+	var allLinks = Array.from(doc.querySelectorAll('link[href][rel="import"]'));
 
 	prependToPivot(allLinks, opts.prepend, 'link', 'href', 'html', {rel: "import"});
 	appendToPivot(allLinks, opts.append, 'link', 'href', 'html', {rel: "import"});
@@ -173,7 +174,7 @@ function prepareImports(doc, opts, data) {
 			src = Path.join(docRoot, src);
 		}
 
-		return loadDom(src, Path.dirname(src)).then(function(idoc) {
+		return loadDom(src, Path.dirname(src)).then(function(idom) {
 			var iopts = Object.assign({}, opts, {
 				append: [],
 				prepend: [],
@@ -182,6 +183,7 @@ function prepareImports(doc, opts, data) {
 				css: null,
 				js: null
 			});
+			var idoc = idom.window.document;
 			return processDocument(idoc, iopts, {}).then(function(data) {
 				// make sure no variable can leak to SCRIPT
 				var iscript = function(html) {
@@ -219,7 +221,7 @@ function processScripts(doc, opts, data) {
 		opts.append.unshift(opts.js);
 		opts.ignore.unshift(opts.js);
 	}
-	var allScripts = doc.queryAll('script').filter(function(node) {
+	var allScripts = Array.from(doc.querySelectorAll('script')).filter(function(node) {
 		var src = node.getAttribute('src');
 		if (src && filterRemotes(src, opts.remotes) == 0) return false;
 		return !node.type || node.type == "text/javascript";
@@ -312,7 +314,7 @@ function processStylesheets(doc, opts, data) {
 		opts.ignore.unshift(opts.css);
 	}
 
-	var allLinks = doc.queryAll('link[href][rel="stylesheet"],style').filter(function(node) {
+	var allLinks = Array.from(doc.querySelectorAll('link[href][rel="stylesheet"],style')).filter(function(node) {
 		var src = node.getAttribute('href');
 		if (src && filterRemotes(src, opts.remotes) == 0) return false;
 		return true;
@@ -357,6 +359,7 @@ function processStylesheets(doc, opts, data) {
 		var data = all.filter(function(str) {
 			return !!str;
 		}).join("\n");
+		if (!data) return {};
 
 		var plugins = [
 			postcssImport({
@@ -503,32 +506,8 @@ function loadDom(path, basepath) {
 	if (!basepath) basepath = path;
 	else basepath = Path.join(basepath, Path.basename(path));
 	return readFile(path).then(function(data) {
-		return new Promise(function(resolve, reject) {
-			jsdom.jsdom(data, {
-				url: 'file://' + Path.resolve(basepath),
-				features: {
-					FetchExternalResources: [],
-					ProcessExternalResources: []
-				},
-				created: function(err, win) {
-					if (err) return reject(err);
-					var doc = win.document;
-					doc.query = function(sel) {
-						return doc.querySelector(sel);
-					};
-					doc.queryAll = function(sel) {
-						return Array.from(doc.querySelectorAll(sel));
-					};
-					win.Node.prototype.before = function(node) {
-						this.parentNode.insertBefore(node, this);
-					};
-					win.Node.prototype.after = function(node) {
-						if (this.nextSibling) this.parentNode.insertBefore(node, this.nextSibling);
-						else this.parentNode.appendChild(node);
-					};
-					resolve(doc);
-				}
-			});
+		return new JSDOM(data, {
+			url: 'file://' + Path.resolve(basepath)
 		});
 	});
 }
