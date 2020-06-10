@@ -52,6 +52,7 @@ function bundledom(path, opts, cb) {
 	opts.babel = babelOpts;
 
 	var p = loadDom(path, opts.root).then(function(dom) {
+		opts.basepath = dom.basepath;
 		var data = {};
 		var doc = dom.window.document;
 		return processDocument(doc, opts, data).then(function() {
@@ -65,7 +66,7 @@ function bundledom(path, opts, cb) {
 					return JSON.stringify(data.css);
 				}) + ')();';
 			} else {
-				var cssPath = getRelativePath(doc, opts.css);
+				var cssPath = getRelativePath(opts.basepath, opts.css);
 				return writeFile(cssPath, data.css).then(function() {
 					if (opts.cli) console.warn(opts.css);
 					if (data.cssmap) {
@@ -81,7 +82,7 @@ function bundledom(path, opts, cb) {
 			var p = Promise.resolve();
 			if (opts.html) {
 				p = p.then(function() {
-					var htmlPath = getRelativePath(doc, opts.html);
+					var htmlPath = getRelativePath(opts.basepath, opts.html);
 					return writeFile(htmlPath, html).then(function() {
 						if (opts.cli) console.warn(opts.html);
 					});
@@ -91,7 +92,7 @@ function bundledom(path, opts, cb) {
 			}
 			if (opts.js) {
 				p = p.then(function() {
-					var jsPath = getRelativePath(doc, opts.js);
+					var jsPath = getRelativePath(opts.basepath, opts.js);
 					return writeFile(jsPath, data.js).then(function() {
 						if (opts.cli) console.warn(opts.js);
 						if (data.jsmap) {
@@ -148,8 +149,7 @@ function processCustom(doc, opts, data) {
 }
 
 function prepareImports(doc, opts, data) {
-	var path = URL.parse(doc.baseURI).pathname;
-	var docRoot = Path.dirname(path);
+	var docRoot = Path.dirname(opts.basepath);
 
 	var allLinks = Array.from(doc.querySelectorAll('link[href][rel="import"]'));
 
@@ -181,7 +181,8 @@ function prepareImports(doc, opts, data) {
 				exclude: [],
 				ignore: [],
 				css: null,
-				js: null
+				js: null,
+				basepath: idom.basepath
 			});
 			var idoc = idom.window.document;
 			return processDocument(idoc, iopts, {}).then(function(data) {
@@ -216,7 +217,7 @@ function prepareImports(doc, opts, data) {
 }
 
 function processScripts(doc, opts, data) {
-	var docRoot = getRelativePath(doc);
+	var docRoot = getRelativePath(opts.basepath);
 	if (opts.js) {
 		opts.append.unshift(opts.js);
 		opts.ignore.unshift(opts.js);
@@ -305,7 +306,7 @@ function compress(str) {
 }
 
 function processStylesheets(doc, opts, data) {
-	var path = URL.parse(doc.baseURI).pathname;
+	var path = opts.basepath;
 	var pathExt = Path.extname(path);
 	var docRoot = Path.dirname(path);
 	path = Path.join(docRoot, Path.basename(path, pathExt));
@@ -394,8 +395,8 @@ function postcssRebase(asset) {
 	return asset.relativePath;
 }
 
-function getRelativePath(doc, path) {
-	var dir = Path.dirname(URL.parse(doc.baseURI).pathname);
+function getRelativePath(basepath, path) {
+	var dir = Path.dirname(basepath);
 	if (path) return Path.join(dir, path);
 	else return dir;
 }
@@ -506,9 +507,15 @@ function loadDom(path, basepath) {
 	if (!basepath) basepath = path;
 	else basepath = Path.join(basepath, Path.basename(path));
 	return readFile(path).then(function(data) {
-		return new JSDOM(data, {
-			url: 'file://' + Path.resolve(basepath)
+		var abspath = Path.resolve(basepath);
+		var dom = new JSDOM(data, {
+			url: URL.format({
+				protocol: 'file:',
+				pathname: abspath
+			})
 		});
+		dom.basepath = abspath;
+		return dom;
 	});
 }
 
