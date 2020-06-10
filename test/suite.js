@@ -8,25 +8,18 @@ var bundledom = require('..');
 
 function runDom(htmlPath, data) {
 	return new Promise(function(resolve, reject) {
-		var virtualConsole = jsdom.createVirtualConsole();
+		var virtualConsole = new jsdom.VirtualConsole();
 		virtualConsole.on('jsdomError', function(err) {
 			reject(err);
 		});
-		jsdom.jsdom(data.html, {
+		const dom = new jsdom.JSDOM(data.html, {
 			virtualConsole: virtualConsole,
 			url: 'file://' + Path.resolve(htmlPath),
-			features: {
-				FetchExternalResources: ['script'],
-				ProcessExternalResources: ['script']
-			},
-			created: function(err, win) {
-				if (err) return reject(err);
-				win.onload = function() {
-					win.eval(data.js);
-					resolve(win.document);
-				};
-			}
+			runScripts: "dangerously",
+			resources: "usable"
 		});
+		dom.window.eval(data.js);
+		resolve(dom.window.document);
 	});
 }
 
