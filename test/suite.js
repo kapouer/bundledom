@@ -38,9 +38,11 @@ it('should do the most simplest basic js test', function() {
 
 it('should concat js for legacy scripts', function() {
 	return bundledom('test/fixtures/concat.html', {
-		exclude: []
+		exclude: [],
+		concatenate: true
 	}).then(function(data) {
 		data.should.have.property('js');
+		data.js.should.containEql("window.towin = true;");
 		data.should.have.property('html');
 	});
 });
