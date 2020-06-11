@@ -36,6 +36,15 @@ it('should do the most simplest basic js test', function() {
 	});
 });
 
+it('should concat js for legacy scripts', function() {
+	return bundledom('test/fixtures/concat.html', {
+		exclude: []
+	}).then(function(data) {
+		data.should.have.property('js');
+		data.should.have.property('html');
+	});
+});
+
 it('should work without anything to do', function() {
 	return bundledom('test/fixtures/none.html', {
 		exclude: []

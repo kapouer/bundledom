@@ -232,13 +232,12 @@ function processScripts(doc, opts, data) {
 	appendToPivot(allScripts, opts.append, 'script', 'src', 'js');
 
 	const entries = [];
-	const remotes = {};
+	const legacies = [];
 
 
-	return Promise.all(allScripts.map(function(node, i) {
-		let p = Promise.resolve();
-
+	allScripts.forEach(function(node, i) {
 		const src = node.getAttribute('src');
+		const esm = node.getAttribute('type') == "module";
 		const name = "node" + i;
 
 		if (src) {
@@ -250,24 +249,17 @@ function processScripts(doc, opts, data) {
 				return;
 			}
 			data.scripts.push(src);
-
-			if (filterRemotes(src, opts.remotes) == 1) {
-				entries.push({
-					name: name,
-					remote: true
-				});
-				p = p.then(function() {
-					return got((src.startsWith('//') ? "https:" : "") + src).then(function(response) {
-						remotes[name] = response.body.toString();
-					});
-				});
+			const path = opts.root && src.startsWith('/')
+				? Path.join(opts.root, src)
+				: Path.join(docRoot, src);
+			if (esm) {
+				entries.push({name, path});
+			} else if (filterRemotes(src, opts.remotes) == 1) {
+				legacies.push(got((src.startsWith('//') ? "https:" : "") + src).then(function(response) {
+					return response.body.toString();
+				}));
 			} else {
-				entries.push({
-					name: name,
-					path: opts.root && src.startsWith('/')
-						? Path.join(opts.root, src)
-						: Path.join(docRoot, src)
-				});
+				legacies.push(readFile(path));
 			}
 		} else if (node.textContent) {
 			if (~opts.ignore.indexOf('.')) {
@@ -277,25 +269,28 @@ function processScripts(doc, opts, data) {
 				removeNodeAndSpaceBefore(node);
 				return;
 			}
-			entries.push({
-				name: name,
-				data: node.textContent
-			});
+			if (esm) {
+				entries.push({
+					name: name,
+					data: node.textContent
+				});
+			} else {
+				legacies.push(Promise.resolve(node.textContent));
+			}
 		} else {
 			return;
 		}
 		removeNodeAndSpaceBefore(node);
-		return p;
-	})).then(function() {
-		if (entries.length == 0) return {};
+	});
+	return Promise.all(legacies).then(function(dataList) {
+		if (entries.length == 0 && dataList.length == 0) return {};
 		const virtuals = {};
 		const bundle = entries.map(function(entry) {
 			const path = entry.path || entry.name;
-			if (entry.remote) virtuals[entry.name] = remotes[entry.name];
-			else if (entry.data) virtuals[entry.name] = entry.data;
+			if (entry.data) virtuals[entry.name] = entry.data;
 			return `import "${path}";`
 		}).join('\n');
-		virtuals.bundle = bundle;
+		virtuals.bundle = dataList.join('\n') + bundle;
 		return rollup.rollup({
 			input: 'bundle',
 			context: 'window',
