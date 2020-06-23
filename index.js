@@ -289,7 +289,7 @@ function processScripts(doc, opts, data) {
 		const bundle = entries.map(function(entry) {
 			const path = entry.path || entry.name;
 			if (entry.data) virtuals[entry.name] = entry.data;
-			return `import "${path}";`
+			return `import "${path.replace(/\\/g,'/')}";`
 		}).join('\n');
 		virtuals.bundle = dataList.join('\n') + bundle;
 		return rollup.rollup({
