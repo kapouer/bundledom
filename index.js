@@ -12,6 +12,7 @@ const rollupBabel = require('@rollup/plugin-babel');
 const rollupTerser = require('rollup-plugin-terser');
 const rollupVirtual = require('@rollup/plugin-virtual');
 const rollupResolve = require('@rollup/plugin-node-resolve');
+const rollupCommonjs = require('@rollup/plugin-commonjs');
 const reporter = require('postcss-reporter');
 const JSDOM = require('jsdom').JSDOM;
 const mkdirp = require('mkdirp');
@@ -296,6 +297,7 @@ function processScripts(doc, opts, data) {
 			input: 'bundle',
 			context: 'window',
 			plugins: [
+				rollupCommonjs(),
 				rollupResolve.nodeResolve(),
 				rollupVirtual(virtuals),
 				rollupBabel.babel(opts.babel),
