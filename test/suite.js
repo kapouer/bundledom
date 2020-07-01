@@ -62,6 +62,7 @@ it('should support es modules', function() {
 		exclude: [],
 		concatenate: true
 	}).then(function(data) {
+		data.scripts.should.eql(['mod.js', 'depmod.js']);
 		data.should.have.property('js');
 		data.js.trim().should.startWith('(function (');
 		data.js.includes('emptyObject').should.be.true();

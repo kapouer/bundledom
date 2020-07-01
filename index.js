@@ -306,6 +306,10 @@ function processScripts(doc, opts, data) {
 				}) : null
 			]
 		}).then(function(bundle) {
+			for (let i=1; i < bundle.watchFiles.length; i++) {
+				let rel = Path.relative(docRoot, bundle.watchFiles[i]);
+				if (!data.scripts.includes(rel)) data.scripts.push(rel);
+			}
 			return bundle.generate({
 				format: 'iife'
 			});
