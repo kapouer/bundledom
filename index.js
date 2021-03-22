@@ -294,13 +294,14 @@ function processScripts(doc, opts, data) {
 			return `import "${path.replace(/\\/g,'/')}";`
 		}).join('\n');
 		virtuals.__bundle__ = dataList.join('\n') + bundle;
+
 		return rollup.rollup({
 			input: '__bundle__',
 			context: 'window',
 			plugins: [
-				rollupModulesPrefix(opts.modules),
-				rollupCommonjs(),
+				rollupModulesPrefix(opts),
 				rollupResolve.nodeResolve(),
+				rollupCommonjs(),
 				rollupVirtual(virtuals),
 				rollupBabel.babel(opts.babel),
 				opts.minify ? rollupTerser.terser({
@@ -389,7 +390,8 @@ function processStylesheets(doc, opts, data) {
 
 		const plugins = [
 			postcssImport({
-				plugins: [postcssUrl({url: postcssRebase})]
+				plugins: [postcssUrl({ url: postcssRebase })],
+				resolve: cssModulesPrefix(opts)
 			}),
 			postcssUrl({url: postcssRebase}),
 			postcssFlexBugs,
@@ -564,18 +566,47 @@ function writeFile(path, data) {
 	});
 }
 
-function rollupModulesPrefix(root) {
-	if (!root) return;
+function rollupModulesPrefix({ modules, root }) {
+	if (!modules) return;
 	const resolver = new Resolver({
 		node_path: 'node_modules',
-		prefix: root
+		prefix: modules
 	});
+	const absRoot = Path.resolve(root);
 	return {
 		name: "modulesPrefix",
-		async resolveId(source) {
-			if (!source.startsWith(root)) return null;
-			const obj = resolver.resolve(source);
-			return obj.path;
+		async resolveId(source, importer) {
+			if (/^[\.\/]*modules\//.test(source) == false) return null;
+			const browserPath = Path.join(
+				'/',
+				Path.relative(
+					absRoot,
+					Path.join(Path.dirname(importer), source)
+				)
+			);
+			const res = resolver.resolve(browserPath);
+			return res.path;
 		}
+	};
+}
+
+function cssModulesPrefix({ modules, root }) {
+	if (!modules) return;
+	const resolver = new Resolver({
+		node_path: 'node_modules',
+		prefix: modules
+	});
+	const absRoot = Path.resolve(root);
+	return function (source, basedir) {
+		if (/^[\.\/]*modules\//.test(source) == false) return source;
+		const browserPath = Path.join(
+			'/',
+			Path.relative(
+				absRoot,
+				Path.join(basedir, source)
+			)
+		);
+		const res = resolver.resolve(browserPath);
+		return Path.resolve(res.path);
 	};
 }
