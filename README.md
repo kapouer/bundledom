@@ -18,7 +18,7 @@ Features
 * downloads remote scripts or stylesheets with whitelist (new in 1.7.0)
 * allows custom asynchronous DOM modifications (new in 1.6.0)
 * any kind of modules are supported, thanks to rollup
-
+* relative imports can be resolved using modules option.
 
 Install
 -------
@@ -100,6 +100,7 @@ and `opts` has these properties:
 * root: path
 * custom: function(dom, opts, data) {} returning a promise
 * remotes: list of allowed remote domains to download from
+* modules: the mount path for resolving node_modules (/modules/xxx becomes node_modules/xxx/index.js)
 
 Strings are matched simply by searching a substring.
 

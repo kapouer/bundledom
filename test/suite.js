@@ -70,6 +70,20 @@ it('should support es modules', function() {
 	});
 });
 
+it('should support es modules with browser prefix resolver', function() {
+	return bundledom('test/fixtures/esm-browser.html', {
+		modules: '/modules',
+		exclude: [],
+		concatenate: true
+	}).then(function(data) {
+		data.scripts.should.eql(['mod-browser.js', '../../node_modules/@ungap/promise-all-settled/esm/index.js']);
+		data.should.have.property('js');
+		data.js.trim().should.startWith('(function (');
+		data.js.includes('Promise.allSettled').should.be.true();
+		data.should.have.property('html');
+	});
+});
+
 it('should ignore a script', function() {
 	return bundledom('test/fixtures/exclude.html', {
 		ignore: ['b.js']

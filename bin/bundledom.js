@@ -62,6 +62,11 @@ var parser = dash.createParser({options: [
 		names: ['root'],
 		type: 'string',
 		help: 'root directory instead of dirname(html file path)'
+	},
+	{
+		names: ['modules'],
+		type: 'string',
+		help: 'prefix for resolving es, cjs, or node modules'
 	}
 ]});
 

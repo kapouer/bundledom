@@ -13,6 +13,7 @@ const rollupTerser = require('rollup-plugin-terser');
 const rollupVirtual = require('@rollup/plugin-virtual');
 const rollupResolve = require('@rollup/plugin-node-resolve');
 const rollupCommonjs = require('@rollup/plugin-commonjs');
+const Resolver = require('resolve-relative-import');
 const reporter = require('postcss-reporter');
 const JSDOM = require('jsdom').JSDOM;
 const mkdirp = require('mkdirp');
@@ -297,6 +298,7 @@ function processScripts(doc, opts, data) {
 			input: 'bundle',
 			context: 'window',
 			plugins: [
+				rollupModulesPrefix(opts.modules),
 				rollupCommonjs(),
 				rollupResolve.nodeResolve(),
 				rollupVirtual(virtuals),
@@ -562,3 +564,18 @@ function writeFile(path, data) {
 	});
 }
 
+function rollupModulesPrefix(root) {
+	if (!root) return;
+	const resolver = new Resolver({
+		node_path: 'node_modules',
+		prefix: root
+	});
+	return {
+		name: "modulesPrefix",
+		async resolveId(source) {
+			if (!source.startsWith(root)) return null;
+			const obj = resolver.resolve(source);
+			return obj.path;
+		}
+	};
+}
