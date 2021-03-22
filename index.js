@@ -50,10 +50,11 @@ function bundledom(path, opts, cb) {
 		],
 		plugins: [
 			"@babel/plugin-proposal-class-properties",
-			"@babel/plugin-proposal-optional-chaining"
+			"@babel/plugin-proposal-optional-chaining",
+			"@babel/transform-runtime"
 		],
 		compact: false,
-		babelHelpers: 'bundled'
+		babelHelpers: 'runtime',
 		comments: minify === false
 	};
 
