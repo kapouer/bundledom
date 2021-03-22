@@ -22,6 +22,9 @@
     "htmlimport",
     "dom"
   ],
+  "mocha": {
+    "spec": "test/*.js"
+  },
   "author": "Jérémy Lal <kapouer@melix.org>",
   "license": "MIT",
   "bugs": {
