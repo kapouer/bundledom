@@ -37,6 +37,11 @@ function bundledom(path, opts, cb) {
 		ignore: []
 	}, opts);
 
+	let minify = true;
+	if (opts.concatenate !== undefined) minify = !opts.concatenate;
+	if (opts.minify !== undefined) minify = opts.minify;
+	opts.minify = minify;
+
 	const babelOpts = {
 		presets: [
 			[presetEnv, {
@@ -49,11 +54,9 @@ function bundledom(path, opts, cb) {
 		],
 		compact: false,
 		babelHelpers: 'bundled'
+		comments: minify === false
 	};
-	let minify = true;
-	if (opts.concatenate !== undefined) minify = !opts.concatenate;
-	if (opts.minify !== undefined) minify = opts.minify;
-	opts.minify = minify;
+
 	opts.babel = babelOpts;
 
 	let p = loadDom(path, opts.root).then(function(dom) {
