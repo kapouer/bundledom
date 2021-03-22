@@ -553,13 +553,12 @@ function readFile(path) {
 
 function writeFile(path, data) {
 	return new Promise(function(resolve, reject) {
-		mkdirp(Path.dirname(path), function(err) {
-			if (err) return reject(err);
+		mkdirp(Path.dirname(path)).then(function () {
 			fs.writeFile(path, data, function(err) {
 				if (err) reject(err);
 				else resolve();
 			});
-		});
+		}).catch(reject);
 	});
 }
 

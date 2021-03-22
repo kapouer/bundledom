@@ -225,13 +225,12 @@ function copyOver(from, to) {
 		fs.unlink(to, function(err) {
 			fs.readFile(from, function(err, data) {
 				if (err) return reject(err);
-				mkdirp(Path.dirname(to), function(err) {
-					if (err) return reject(err);
+				mkdirp(Path.dirname(to)).then(function () {
 					fs.writeFile(to, data, function(err) {
 						if (err) return reject(err);
 						resolve();
 					});
-				});
+				}).catch(reject);
 			});
 		});
 	});

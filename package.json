@@ -46,7 +46,6 @@
     "got": "^6.7.1",
     "jsdom": "^16.2.2",
     "minimatch": "^3.0.3",
-    "mkdirp": "^0.5.5",
     "postcss": "^7.0.32",
     "postcss-flexbugs-fixes": "^4.2.1",
     "postcss-import": "^12.0.1",
@@ -55,6 +54,7 @@
     "rollup": "^2.15.0",
     "rollup-plugin-terser": "^6.1.0",
     "rollup-plugin-uglify": "^6.0.4"
+    "mkdirp": "^1.0.4",
   },
   "devDependencies": {
     "mocha": "^2.5.3",
