@@ -293,9 +293,9 @@ function processScripts(doc, opts, data) {
 			if (entry.data) virtuals[entry.name] = entry.data;
 			return `import "${path.replace(/\\/g,'/')}";`
 		}).join('\n');
-		virtuals.bundle = dataList.join('\n') + bundle;
+		virtuals.__bundle__ = dataList.join('\n') + bundle;
 		return rollup.rollup({
-			input: 'bundle',
+			input: '__bundle__',
 			context: 'window',
 			plugins: [
 				rollupModulesPrefix(opts.modules),
