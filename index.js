@@ -62,39 +62,39 @@ function bundledom(path, opts, cb) {
 
 	opts.babel = babelOpts;
 
-	let p = loadDom(path, opts.root).then(function(dom) {
+	let p = loadDom(path, opts.root).then(function (dom) {
 		opts.basepath = dom.basepath;
 		const data = {};
 		const doc = dom.window.document;
-		return processDocument(doc, opts, data).then(function() {
+		return processDocument(doc, opts, data).then(function () {
 			if (!opts.css) {
-				if (data.css) data.js += '\n(' + function() {
+				if (data.css) data.js += '\n(' + function () {
 					const sheet = document.createElement('style');
 					sheet.type = 'text/css';
 					sheet.textContent = CSS;
 					document.head.appendChild(sheet);
-				}.toString().replace('CSS', function() {
+				}.toString().replace('CSS', function () {
 					return JSON.stringify(data.css);
 				}) + ')();';
 			} else {
 				const cssPath = getRelativePath(opts.basepath, opts.css);
-				return writeFile(cssPath, data.css).then(function() {
+				return writeFile(cssPath, data.css).then(function () {
 					if (opts.cli) console.warn(opts.css);
 					if (data.cssmap) {
 						const cssMapPath = cssPath + '.map';
-						return writeFile(cssMapPath, data.cssmap).then(function() {
+						return writeFile(cssMapPath, data.cssmap).then(function () {
 							if (opts.cli) console.warn(opts.css + ".map");
 						});
 					}
 				});
 			}
-		}).then(function() {
+		}).then(function () {
 			const html = dom.serialize();
 			let p = Promise.resolve();
 			if (opts.html) {
-				p = p.then(function() {
+				p = p.then(function () {
 					const htmlPath = getRelativePath(opts.basepath, opts.html);
-					return writeFile(htmlPath, html).then(function() {
+					return writeFile(htmlPath, html).then(function () {
 						if (opts.cli) console.warn(opts.html);
 					});
 				});
@@ -102,20 +102,20 @@ function bundledom(path, opts, cb) {
 				data.html = html;
 			}
 			if (opts.js) {
-				p = p.then(function() {
+				p = p.then(function () {
 					const jsPath = getRelativePath(opts.basepath, opts.js);
-					return writeFile(jsPath, data.js).then(function() {
+					return writeFile(jsPath, data.js).then(function () {
 						if (opts.cli) console.warn(opts.js);
 						if (data.jsmap) {
 							const jsMapPath = jsPath + '.map';
-							return writeFile(jsMapPath, data.jsmap).then(function() {
+							return writeFile(jsMapPath, data.jsmap).then(function () {
 								if (opts.cli) console.warn(opts.js + ".map");
 							});
 						}
 					});
 				});
 			}
-			return p.then(function() {
+			return p.then(function () {
 				if (cb) cb(null, data);
 				return data;
 			});
@@ -135,21 +135,21 @@ function processDocument(doc, opts, data) {
 	});
 	if (!data.js) data.js = "";
 	if (!data.css) data.css = "";
-	return Promise.resolve().then(function() {
+	return Promise.resolve().then(function () {
 		return processCustom(doc, opts, data);
-	}).then(function() {
+	}).then(function () {
 		return prepareImports(doc, opts, data);
-	}).then(function() {
-		return processScripts(doc, opts, data).then(function(obj) {
+	}).then(function () {
+		return processScripts(doc, opts, data).then(function (obj) {
 			if (obj.str) data.js += obj.str;
 			if (obj.map) data.jsmap += obj.map;
 		});
-	}).then(function() {
-		return processStylesheets(doc, opts, data).then(function(obj) {
+	}).then(function () {
+		return processStylesheets(doc, opts, data).then(function (obj) {
 			if (obj.css) data.css += obj.css;
 			if (obj.map) data.cssmap += obj.map;
 		});
-	}).then(function() {
+	}).then(function () {
 		return data;
 	});
 }
@@ -163,11 +163,11 @@ function prepareImports(doc, opts, data) {
 
 	const allLinks = Array.from(doc.querySelectorAll('link[href][rel="import"]'));
 
-	prependToPivot(allLinks, opts.prepend, 'link', 'href', 'html', {rel: "import"});
-	appendToPivot(allLinks, opts.append, 'link', 'href', 'html', {rel: "import"});
+	prependToPivot(allLinks, opts.prepend, 'link', 'href', 'html', { rel: "import" });
+	appendToPivot(allLinks, opts.append, 'link', 'href', 'html', { rel: "import" });
 
 	// the order is not important
-	return Promise.all(allLinks.map(function(node) {
+	return Promise.all(allLinks.map(function (node) {
 		let src = node.getAttribute('href');
 		if (filterByName(src, opts.ignore)) {
 			return;
@@ -184,7 +184,7 @@ function prepareImports(doc, opts, data) {
 			src = Path.join(docRoot, src);
 		}
 
-		return loadDom(src, Path.dirname(src)).then(function(idom) {
+		return loadDom(src, Path.dirname(src)).then(function (idom) {
 			const iopts = Object.assign({}, opts, {
 				append: [],
 				prepend: [],
@@ -195,22 +195,22 @@ function prepareImports(doc, opts, data) {
 				basepath: idom.basepath
 			});
 			const idoc = idom.window.document;
-			return processDocument(idoc, iopts, {}).then(function(data) {
+			return processDocument(idoc, iopts, {}).then(function (data) {
 				// make sure no variable can leak to SCRIPT
-				let iscript = function(html) {
+				let iscript = function (html) {
 					if (!document._currentScript) document._currentScript = {};
 					document._currentScript.parentOwner = (document.currentScript || document._currentScript).ownerDocument;
 					document._currentScript.ownerDocument = document.implementation.createHTMLDocument("");
 					try {
 						document._currentScript.ownerDocument.documentElement.innerHTML = html;
-					} catch(ex) {
+					} catch (ex) {
 						// IE < 10 fallback
 						document._currentScript.ownerDocument.body.innerHTML = html;
 					}
 					SCRIPT
 					document._currentScript.ownerDocument = document._currentScript.parentOwner;
 					delete document._currentScript.parentOwner;
-				}.toString().replace("SCRIPT", function() {
+				}.toString().replace("SCRIPT", function () {
 					return data.js;
 				});
 				iscript = '\n(' + iscript + ')(' +
@@ -232,7 +232,7 @@ function processScripts(doc, opts, data) {
 		opts.append.unshift(opts.js);
 		opts.ignore.unshift(opts.js);
 	}
-	const allScripts = Array.from(doc.querySelectorAll('script')).filter(function(node) {
+	const allScripts = Array.from(doc.querySelectorAll('script')).filter(function (node) {
 		const src = node.getAttribute('src');
 		if (src && filterRemotes(src, opts.remotes) == 0) return false;
 		return !node.type || node.type == "text/javascript" || node.type == "module";
@@ -244,7 +244,7 @@ function processScripts(doc, opts, data) {
 	const legacies = [];
 
 
-	allScripts.forEach(function(node, i) {
+	allScripts.forEach(function (node, i) {
 		const src = node.getAttribute('src');
 		const esm = node.getAttribute('type') == "module";
 		const name = "node" + i;
@@ -262,9 +262,9 @@ function processScripts(doc, opts, data) {
 				? Path.join(opts.root, src)
 				: Path.join(docRoot, src);
 			if (esm) {
-				entries.push({name, path});
+				entries.push({ name, path });
 			} else if (filterRemotes(src, opts.remotes) == 1) {
-				legacies.push(got((src.startsWith('//') ? "https:" : "") + src).then(function(response) {
+				legacies.push(got((src.startsWith('//') ? "https:" : "") + src).then(function (response) {
 					return response.body.toString();
 				}));
 			} else {
@@ -291,13 +291,13 @@ function processScripts(doc, opts, data) {
 		}
 		removeNodeAndSpaceBefore(node);
 	});
-	return Promise.all(legacies).then(function(dataList) {
+	return Promise.all(legacies).then(function (dataList) {
 		if (entries.length == 0 && dataList.length == 0) return {};
 		const virtuals = {};
-		const bundle = entries.map(function(entry) {
+		const bundle = entries.map(function (entry) {
 			const path = entry.path || entry.name;
 			if (entry.data) virtuals[entry.name] = entry.data;
-			return `import "${path.replace(/\\/g,'/')}";`
+			return `import "${path.replace(/\\/g, '/')}";`
 		}).join('\n');
 		virtuals.__bundle__ = dataList.join('\n') + bundle;
 
@@ -314,18 +314,18 @@ function processScripts(doc, opts, data) {
 					numWorkers: MaxWorkers
 				}) : null
 			]
-		}).then(function(bundle) {
-			for (let i=1; i < bundle.watchFiles.length; i++) {
+		}).then(function (bundle) {
+			for (let i = 1; i < bundle.watchFiles.length; i++) {
 				let rel = Path.relative(docRoot, bundle.watchFiles[i]);
 				if (!data.scripts.includes(rel)) data.scripts.push(rel);
 			}
 			return bundle.generate({
 				format: 'iife'
 			});
-		}).then(function(result) {
+		}).then(function (result) {
 			const codeList = [];
 			const mapList = [];
-			result.output.forEach(function(chunk) {
+			result.output.forEach(function (chunk) {
 				if (chunk.code) codeList.push(chunk.code);
 				if (chunk.map) mapList.push(chunk.map);
 			});
@@ -347,16 +347,16 @@ function processStylesheets(doc, opts, data) {
 		opts.ignore.unshift(opts.css);
 	}
 
-	const allLinks = Array.from(doc.querySelectorAll('link[href][rel="stylesheet"],style')).filter(function(node) {
+	const allLinks = Array.from(doc.querySelectorAll('link[href][rel="stylesheet"],style')).filter(function (node) {
 		const src = node.getAttribute('href');
 		if (src && filterRemotes(src, opts.remotes) == 0) return false;
 		return true;
 	});
 
-	prependToPivot(allLinks, opts.prepend, 'link', 'href', 'css', {rel: "stylesheet"});
-	appendToPivot(allLinks, opts.append, 'link', 'href', 'css', {rel: "stylesheet"});
+	prependToPivot(allLinks, opts.prepend, 'link', 'href', 'css', { rel: "stylesheet" });
+	appendToPivot(allLinks, opts.append, 'link', 'href', 'css', { rel: "stylesheet" });
 
-	return Promise.all(allLinks.map(function(node) {
+	return Promise.all(allLinks.map(function (node) {
 		let src = node.getAttribute('href');
 		if (src) {
 			if (filterByName(src, opts.ignore)) {
@@ -369,7 +369,7 @@ function processStylesheets(doc, opts, data) {
 			data.stylesheets.push(src);
 			if (filterRemotes(src, opts.remotes) == 1) {
 				if (src.startsWith('//')) src = "https:" + src;
-				return got(src).then(function(response) {
+				return got(src).then(function (response) {
 					return response.body.toString();
 				});
 			} else {
@@ -388,8 +388,8 @@ function processStylesheets(doc, opts, data) {
 			}
 			return node.textContent;
 		}
-	})).then(function(all) {
-		const data = all.filter(function(str) {
+	})).then(function (all) {
+		const data = all.filter(function (str) {
 			return !!str;
 		}).join("\n");
 		if (!data) return {};
@@ -398,7 +398,7 @@ function processStylesheets(doc, opts, data) {
 			postcssImport(Object.assign({
 				plugins: [postcssUrl({ url: postcssRebase })],
 			}, cssModulesPrefix(opts))),
-			postcssUrl({url: postcssRebase}),
+			postcssUrl({ url: postcssRebase }),
 			postcssFlexBugs,
 			postcssAspectRatio(),
 			autoprefixer()
@@ -442,7 +442,7 @@ function filterRemotes(src, remotes) {
 	const host = URL.parse(src).host;
 	if (!host) return -1;
 	if (!remotes) return 0;
-	if (remotes.some(function(rem) {
+	if (remotes.some(function (rem) {
 		if (host.indexOf(rem) >= 0) return true;
 	})) return 1;
 	else return 0;
@@ -450,7 +450,7 @@ function filterRemotes(src, remotes) {
 
 function filterByName(src, list) {
 	if (!list) return;
-	const found = list.some(function(str) {
+	const found = list.some(function (str) {
 		if (str == ".") return false;
 		if (str.indexOf('*') >= 0) return minimatch(src, str);
 		else return ~src.indexOf(str);
@@ -462,7 +462,7 @@ function filterByName(src, list) {
 function filterByExt(list, ext) {
 	if (!list) return [];
 	ext = '.' + ext;
-	return list.filter(function(src) {
+	return list.filter(function (src) {
 		return Path.extname(URL.parse(src).pathname) == ext;
 	});
 }
@@ -512,7 +512,7 @@ function prependToPivot(scripts, list, tag, att, ext, attrs) {
 		return;
 	}
 	attrs = Object.assign({}, attrs);
-	list.forEach(function(src) {
+	list.forEach(function (src) {
 		attrs[att] = src;
 		scripts.unshift(createSibling(pivot, 'before', tag, attrs));
 		debug("prepended", tag, att, src);
@@ -539,7 +539,7 @@ function appendToPivot(scripts, list, tag, att, ext, attrs) {
 function loadDom(path, basepath) {
 	if (!basepath) basepath = path;
 	else basepath = Path.join(basepath, Path.basename(path));
-	return readFile(path).then(function(data) {
+	return readFile(path).then(function (data) {
 		const abspath = Path.resolve(basepath);
 		const dom = new JSDOM(data, {
 			url: URL.format({
@@ -553,8 +553,8 @@ function loadDom(path, basepath) {
 }
 
 function readFile(path) {
-	return new Promise(function(resolve, reject) {
-		fs.readFile(path, function(err, data) {
+	return new Promise(function (resolve, reject) {
+		fs.readFile(path, function (err, data) {
 			if (err) reject(err);
 			else resolve(data.toString());
 		});
@@ -562,9 +562,9 @@ function readFile(path) {
 }
 
 function writeFile(path, data) {
-	return new Promise(function(resolve, reject) {
+	return new Promise(function (resolve, reject) {
 		mkdirp(Path.dirname(path)).then(function () {
-			fs.writeFile(path, data, function(err) {
+			fs.writeFile(path, data, function (err) {
 				if (err) reject(err);
 				else resolve();
 			});
