@@ -97,7 +97,7 @@ and `opts` has these properties:
 * js: path relative to html file
 * css: path relative to html file
 * html: path relative to root
-* root: path
+* root: absolute mount path, defaults to current directory
 * custom: function(dom, opts, data) {} returning a promise
 * remotes: list of allowed remote domains to download from
 * modules: the mount path for resolving node_modules (/modules/xxx becomes node_modules/xxx/index.js)

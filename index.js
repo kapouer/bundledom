@@ -42,6 +42,7 @@ function bundledom(path, opts, cb) {
 	if (opts.concatenate !== undefined) minify = !opts.concatenate;
 	if (opts.minify !== undefined) minify = opts.minify;
 	opts.minify = minify;
+	if (!opts.root) opts.root = Path.dirname(path);
 
 	const babelOpts = {
 		presets: [
@@ -177,7 +178,7 @@ function prepareImports(doc, opts, data) {
 		}
 		data.imports.push(src);
 
-		if (opts.root && src.startsWith('/')) {
+		if (src.startsWith('/')) {
 			src = Path.join(opts.root, src);
 		} else {
 			src = Path.join(docRoot, src);
@@ -257,7 +258,7 @@ function processScripts(doc, opts, data) {
 				return;
 			}
 			data.scripts.push(src);
-			const path = opts.root && src.startsWith('/')
+			const path = src.startsWith('/')
 				? Path.join(opts.root, src)
 				: Path.join(docRoot, src);
 			if (esm) {
@@ -372,7 +373,7 @@ function processStylesheets(doc, opts, data) {
 					return response.body.toString();
 				});
 			} else {
-				if (opts.root && src.startsWith('/')) {
+				if (src.startsWith('/')) {
 					src = Path.relative(docRoot, Path.join(opts.root, src));
 				}
 				return `@import url("${src}");`;
