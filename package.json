@@ -1,6 +1,6 @@
 {
   "name": "bundledom",
-  "version": "3.2.1",
+  "version": "4.0.0-beta.1",
   "description": "Bundle and transform javascript files, stylesheets, html imports and update DOM document",
   "main": "index.js",
   "scripts": {
