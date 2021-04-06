@@ -395,10 +395,9 @@ function processStylesheets(doc, opts, data) {
 		if (!data) return {};
 
 		const plugins = [
-			postcssImport({
+			postcssImport(Object.assign({
 				plugins: [postcssUrl({ url: postcssRebase })],
-				resolve: cssModulesPrefix(opts)
-			}),
+			}, cssModulesPrefix(opts))),
 			postcssUrl({url: postcssRebase}),
 			postcssFlexBugs,
 			postcssAspectRatio(),
@@ -604,16 +603,18 @@ function cssModulesPrefix({ modules, root }) {
 		prefix: modules
 	});
 	const absRoot = Path.resolve(root);
-	return function (source, basedir) {
-		if (/^[\.\/]*modules\//.test(source) == false) return source;
-		const browserPath = Path.join(
-			'/',
-			Path.relative(
-				absRoot,
-				Path.join(basedir, source)
-			)
-		);
-		const res = resolver.resolve(browserPath);
-		return Path.resolve(res.path);
+	return {
+		resolve(source, basedir) {
+			if (/^[\.\/]*modules\//.test(source) == false) return source;
+			const browserPath = Path.join(
+				'/',
+				Path.relative(
+					absRoot,
+					Path.join(basedir, source)
+				)
+			);
+			const res = resolver.resolve(browserPath);
+			return Path.resolve(res.path);
+		}
 	};
 }
