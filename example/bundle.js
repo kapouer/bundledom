@@ -18,26 +18,26 @@ var ignore = [common.css, common.js];
 
 var p = bd('public/common.html', common);
 
-p = p.then(function(data) {
+p = p.then(function (data) {
 	exclude = exclude.concat(data.scripts).concat(data.stylesheets);
 });
 
-p = p.then(function() {
-	return new Promise(function(resolve, reject) {
+p = p.then(function () {
+	return new Promise(function (resolve, reject) {
 		glob("public/**/*.html", {
 			ignore: ["public/bundles/**", "public/admin.html", "public/common.html"]
-		}, function(err, files) {
+		}, function (err, files) {
 			if (err) reject(err);
 			else resolve(files);
 		});
 	});
-}).then(function(files) {
-	return Promise.all(files.filter(function(file) {
+}).then(function (files) {
+	return Promise.all(files.filter(function (file) {
 		console.log(file);
 		// useful for debugging
 		// return file == "public/index.html" || file == "public/header.html";
 		return true;
-	}).map(function(file) {
+	}).map(function (file) {
 		var dir = Path.join('bundles', Path.relative('public', Path.dirname(file)));
 		var base = Path.basename(file, '.html');
 		var opts = {
@@ -51,8 +51,8 @@ p = p.then(function() {
 		if (dir != 'bundles') opts.root = "public";
 		return bd(file, opts);
 	}));
-}).then(function(all) {
+}).then(function (all) {
 	console.log(`Processed ${all.length} files`);
-}).catch(function(err) {
+}).catch(function (err) {
 	console.error(err);
 });

@@ -1,2 +1,2 @@
-import {test} from './depmod.js';
+import { test } from './depmod.js';
 test();
