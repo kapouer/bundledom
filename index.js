@@ -393,6 +393,7 @@ function processStylesheets(doc, opts, data) {
 			return !!str;
 		}).join("\n");
 		if (!data) return {};
+		const autoprefixerOpts = {};
 
 		const plugins = [
 			postcssImport(Object.assign({
@@ -400,17 +401,19 @@ function processStylesheets(doc, opts, data) {
 			}, cssModulesPrefix(opts))),
 			postcssUrl({ url: postcssRebase }),
 			postcssFlexBugs,
-			postcssAspectRatio(),
-			autoprefixer()
+			postcssAspectRatio()
 		];
 		if (opts.minify) {
 			plugins.push(cssnano({
+				plugins: [autoprefixer, autoprefixerOpts],
 				preset: ['default', {
 					discardComments: {
 						removeAll: true
 					}
 				}]
 			}));
+		} else {
+			plugins.push(autoprefixer(autoprefixerOpts));
 		}
 		plugins.push(reporter);
 		return postcss(plugins).process(data, {
