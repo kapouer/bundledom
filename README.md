@@ -2,6 +2,7 @@ bundledom -- bundle assets of an html document
 ==============================================
 
 New in version 3: uses rollup for bundling, and still supports old-style bundling.
+New in version 4: resolve native relative imports, better async/await support.
 
 Features
 --------
