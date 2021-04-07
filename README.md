@@ -35,7 +35,7 @@ bundledom
 --html bundles/index.html
 --js /bundles/index.js
 -x jquery.js -x moment.js -i index.js
---prepend '/js/HTMLImports.js'
+--prepend '/js/custom-elements.js'
 public/index.html
 ```
 
@@ -47,7 +47,7 @@ bundledom
 --css /bundles/index.css
 --js /bundles/index.js
 --exclude jquery.js
---prepend '/js/HTMLImports.js'
+--prepend '/js/custom-elements.js'
 public/index.html
 ```
 
@@ -60,7 +60,7 @@ bundledom
 --css /bundles/index.css
 --js /bundles/index.js
 --exclude jquery.js
---prepend '/js/HTMLImports.js'
+--prepend '/js/custom-elements.js'
 --root public
 public/templates/index.html
 ```
@@ -116,12 +116,6 @@ Returns an object with following properties:
 
 * js, css, html: the resulting js, css, html
 * scripts, stylesheets, imports: the lists of processed files
-
-Compatibility of HTML Imports bundling
---------------------------------------
-
-Anywhere createHTMLDocument works. For IE 9 to 11, works better with
-[create-html-document-polyfill](https://github.com/kapouer/create-html-document-polyfill)
 
 Help
 ----
