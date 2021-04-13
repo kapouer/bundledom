@@ -27,13 +27,19 @@ describe("test suite", function () {
 	this.timeout(10000);
 
 	it('should do the most simplest basic js test', function () {
+		process.env.BROWSERSLIST = "ie >= 8";
 		return bundledom('test/fixtures/basic.html', {
-			exclude: []
+			exclude: [],
+			concatenate: true
 		}).then(function (data) {
 			data.should.have.property('js');
+			data.js.should.containEql("Array.from([12, 34]).map(function");
 			data.should.have.property('css');
+			data.css.should.containEql("-ms-transform: opacity");
 			data.should.have.property('html');
-		});
+		}).finally(() => {
+			delete process.env.BROWSERSLIST;
+		})
 	});
 
 	it('should concat js for legacy scripts', function () {

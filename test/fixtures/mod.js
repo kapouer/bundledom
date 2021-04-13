@@ -1,2 +1,4 @@
 import { test } from './depmod.js';
-test();
+(async function () {
+	await test();
+})();
