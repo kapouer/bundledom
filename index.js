@@ -12,7 +12,6 @@ const rollup = require('rollup');
 const rollupBabel = require('@rollup/plugin-babel');
 const rollupTerser = require('rollup-plugin-terser');
 const rollupVirtual = require('@rollup/plugin-virtual');
-const rollupMulti = require('@rollup/plugin-multi-entry');
 const rollupResolve = require('@rollup/plugin-node-resolve');
 const rollupCommonjs = require('@rollup/plugin-commonjs');
 const Resolver = require('resolve-relative-import');
@@ -27,6 +26,8 @@ const URL = require('url');
 const got = require('got');
 
 const minimatch = require("minimatch");
+
+const coreJsRe = /\/core-js\//;
 
 module.exports = bundledom;
 
@@ -63,7 +64,10 @@ function bundledom(path, opts, cb) {
 		compact: false,
 		babelHelpers: 'bundled',
 		comments: minify === false,
-		exclude: [/\/core-js\//]
+		filter(id) {
+			if (coreJsRe.test(id)) return false;
+			return true;
+		}
 	};
 
 	opts.babel = babelOpts;
@@ -253,7 +257,7 @@ function processScripts(doc, opts, data) {
 	allScripts.forEach(function (node, i) {
 		const src = node.getAttribute('src');
 		const esm = node.getAttribute('type') == "module";
-		const name = "node" + i;
+		const name = "\0__node__" + i + ".js";
 
 		if (src) {
 			if (filterByName(src, opts.ignore)) {
@@ -274,8 +278,7 @@ function processScripts(doc, opts, data) {
 					return response.body.toString();
 				}));
 			} else {
-				// legacies.push(readFile(path));
-				entries.push({ name, path });
+				legacies.push(readFile(path));
 			}
 		} else if (node.textContent) {
 			if (~opts.ignore.indexOf('.')) {
@@ -301,26 +304,19 @@ function processScripts(doc, opts, data) {
 	return Promise.all(legacies).then(function (dataList) {
 		if (entries.length == 0 && dataList.length == 0) return {};
 		const virtuals = {};
-		const inputs = [];
-		if (dataList.length > 0) entries.unshift({
-			data: dataList.join('\n'),
-			name: 'legacies'
-		});
-		entries.forEach(function (entry) {
-			if (entry.data) {
-				inputs.push(entry.name);
-				virtuals[entry.name] = entry.data;
-			} else {
-				inputs.push(entry.path);
-			}
-		});
+		const bundle = entries.map(function (entry) {
+			const path = entry.path || entry.name;
+			if (entry.data) virtuals[entry.name] = entry.data;
+			return `import "${path.replace(/\\/g, '/')}";`
+		}).join('\n');
+		const bundleName = '\0__entry__.js';
+		virtuals[bundleName] = dataList.join('\n') + bundle;
 
 		return rollup.rollup({
-			input: inputs,
+			input: bundleName,
 			context: 'window',
 			plugins: [
 				rollupVirtual(virtuals),
-				rollupMulti(),
 				rollupModulesPrefix(opts),
 				rollupResolve.nodeResolve({ browser: true }),
 				rollupCommonjs(),
@@ -331,7 +327,9 @@ function processScripts(doc, opts, data) {
 			]
 		}).then(function (bundle) {
 			for (let i = 1; i < bundle.watchFiles.length; i++) {
-				let rel = Path.relative(docRoot, bundle.watchFiles[i]);
+				const item = bundle.watchFiles[i];
+				if (item.startsWith('\0') || coreJsRe.test(item)) continue;
+				let rel = Path.relative(docRoot, item);
 				if (!data.scripts.includes(rel)) data.scripts.push(rel);
 			}
 			return bundle.generate({
