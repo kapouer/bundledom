@@ -45,7 +45,7 @@
     "@rollup/plugin-virtual": "^2.0.3",
     "autoprefixer": "^10.2.5",
     "core-js": "^3.10.1",
-    "cssnano": "^5.0.0",
+    "cssnano": "^5.0.1",
     "dashdash": "^2.0.0",
     "debug": "^4.3.1",
     "got": "^11.8.2",
