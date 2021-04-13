@@ -418,7 +418,7 @@ function processStylesheets(doc, opts, data) {
 		];
 		if (opts.minify) {
 			plugins.push(cssnano({
-				plugins: [autoprefixer, autoprefixerOpts],
+				plugins: [[autoprefixer, autoprefixerOpts]],
 				preset: ['default', {
 					discardComments: {
 						removeAll: true
