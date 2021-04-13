@@ -322,7 +322,7 @@ function processScripts(doc, opts, data) {
 				rollupVirtual(virtuals),
 				rollupMulti(),
 				rollupModulesPrefix(opts),
-				rollupResolve.nodeResolve(),
+				rollupResolve.nodeResolve({ browser: true }),
 				rollupCommonjs(),
 				rollupBabel.babel(opts.babel),
 				opts.minify ? rollupTerser.terser({
