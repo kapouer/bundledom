@@ -1,14 +1,14 @@
-var should = require('should');
-var jsdom = require('jsdom');
-var Path = require('path');
-var fs = require('fs');
-var mkdirp = require('mkdirp');
+const should = require('should');
+const jsdom = require('jsdom');
+const Path = require('path');
+const fs = require('fs');
+const mkdirp = require('mkdirp');
 
-var bundledom = require('..');
+const bundledom = require('..');
 
 function runDom(htmlPath, data) {
 	return new Promise(function (resolve, reject) {
-		var virtualConsole = new jsdom.VirtualConsole();
+		const virtualConsole = new jsdom.VirtualConsole();
 		virtualConsole.on('jsdomError', function (err) {
 			reject(err);
 		});
@@ -107,7 +107,7 @@ describe("test suite", function () {
 	});
 
 	it('should bundle html import and run it', function () {
-		var filepath = 'test/fixtures/import.html';
+		const filepath = 'test/fixtures/import.html';
 		return bundledom(filepath).then(function (data) {
 			data.should.have.property('js');
 			data.should.have.property('css');
@@ -120,7 +120,7 @@ describe("test suite", function () {
 	});
 
 	it('should bundle html import in html import and run it', function () {
-		var filepath = 'test/fixtures/import-in-import.html';
+		const filepath = 'test/fixtures/import-in-import.html';
 		return bundledom(filepath).then(function (data) {
 			data.should.have.property('js');
 			data.should.have.property('css');
@@ -133,7 +133,7 @@ describe("test suite", function () {
 	});
 
 	it('should bundle imported element with inner imported element and run it', function () {
-		var filepath = 'test/fixtures/element-in-element.html';
+		const filepath = 'test/fixtures/element-in-element.html';
 		return bundledom(filepath).then(function (data) {
 			data.should.have.property('js');
 			data.should.have.property('css');
