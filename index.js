@@ -329,7 +329,7 @@ function processScripts(doc, opts, data) {
 		}).then(function (bundle) {
 			for (let i = 1; i < bundle.watchFiles.length; i++) {
 				const item = bundle.watchFiles[i];
-				if (item.startsWith('\0') || coreJsRe.test(item)) continue;
+				if (item.startsWith('\0') || coreJsRe.test(item) || item.endsWith("/node_modules/regenerator-runtime/runtime.js")) continue;
 				let rel = Path.relative(docRoot, item);
 				if (!data.scripts.includes(rel)) data.scripts.push(rel);
 			}
