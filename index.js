@@ -66,6 +66,7 @@ function bundledom(path, opts, cb) {
 		comments: minify === false,
 		filter(id) {
 			if (coreJsRe.test(id)) return false;
+			if (id.startsWith('\0') && !id.startsWith('\0virtual:')) return false;
 			return true;
 		}
 	};
@@ -257,7 +258,7 @@ function processScripts(doc, opts, data) {
 	allScripts.forEach(function (node, i) {
 		const src = node.getAttribute('src');
 		const esm = node.getAttribute('type') == "module";
-		const name = "\0__node__" + i + ".js";
+		const name = "__node__" + i + ".js";
 
 		if (src) {
 			if (filterByName(src, opts.ignore)) {
@@ -309,7 +310,7 @@ function processScripts(doc, opts, data) {
 			if (entry.data) virtuals[entry.name] = entry.data;
 			return `import "${path.replace(/\\/g, '/')}";`
 		}).join('\n');
-		const bundleName = '\0__entry__.js';
+		const bundleName = '__entry__.js';
 		virtuals[bundleName] = dataList.join('\n') + bundle;
 
 		return rollup.rollup({
