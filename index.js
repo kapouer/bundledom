@@ -44,20 +44,25 @@ function bundledom(path, opts, cb) {
 	opts.minify = minify;
 	if (!opts.root) opts.root = Path.dirname(path);
 
+	const babelPresetOpts = {
+		modules: false,
+		// spec: true,
+		useBuiltIns: 'usage',
+		corejs: 3
+	};
+
 	const babelOpts = {
 		presets: [
-			[presetEnv, {
-				modules: false
-			}]
+			[presetEnv, babelPresetOpts]
 		],
 		plugins: [
 			"@babel/plugin-proposal-class-properties",
-			"@babel/plugin-proposal-optional-chaining",
-			"@babel/transform-runtime"
+			"@babel/plugin-proposal-optional-chaining"
 		],
 		compact: false,
-		babelHelpers: 'runtime',
-		comments: minify === false
+		babelHelpers: 'bundled',
+		comments: minify === false,
+		exclude: [/\/core-js\//]
 	};
 
 	opts.babel = babelOpts;
