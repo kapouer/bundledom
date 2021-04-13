@@ -12,6 +12,7 @@ const rollup = require('rollup');
 const rollupBabel = require('@rollup/plugin-babel');
 const rollupTerser = require('rollup-plugin-terser');
 const rollupVirtual = require('@rollup/plugin-virtual');
+const rollupMulti = require('@rollup/plugin-multi-entry');
 const rollupResolve = require('@rollup/plugin-node-resolve');
 const rollupCommonjs = require('@rollup/plugin-commonjs');
 const Resolver = require('resolve-relative-import');
@@ -273,7 +274,8 @@ function processScripts(doc, opts, data) {
 					return response.body.toString();
 				}));
 			} else {
-				legacies.push(readFile(path));
+				// legacies.push(readFile(path));
+				entries.push({ name, path });
 			}
 		} else if (node.textContent) {
 			if (~opts.ignore.indexOf('.')) {
@@ -299,21 +301,29 @@ function processScripts(doc, opts, data) {
 	return Promise.all(legacies).then(function (dataList) {
 		if (entries.length == 0 && dataList.length == 0) return {};
 		const virtuals = {};
-		const bundle = entries.map(function (entry) {
-			const path = entry.path || entry.name;
-			if (entry.data) virtuals[entry.name] = entry.data;
-			return `import "${path.replace(/\\/g, '/')}";`
-		}).join('\n');
-		virtuals.__bundle__ = dataList.join('\n') + bundle;
+		const inputs = [];
+		if (dataList.length > 0) entries.unshift({
+			data: dataList.join('\n'),
+			name: 'legacies'
+		});
+		entries.forEach(function (entry) {
+			if (entry.data) {
+				inputs.push(entry.name);
+				virtuals[entry.name] = entry.data;
+			} else {
+				inputs.push(entry.path);
+			}
+		});
 
 		return rollup.rollup({
-			input: '__bundle__',
+			input: inputs,
 			context: 'window',
 			plugins: [
+				rollupVirtual(virtuals),
+				rollupMulti(),
 				rollupModulesPrefix(opts),
 				rollupResolve.nodeResolve(),
 				rollupCommonjs(),
-				rollupVirtual(virtuals),
 				rollupBabel.babel(opts.babel),
 				opts.minify ? rollupTerser.terser({
 					numWorkers: MaxWorkers
