@@ -1,0 +1,2 @@
+import "./fakejquery.js";
+window.$();

@@ -214,6 +214,14 @@ describe("test suite", function () {
 		});
 	});
 
+	it('should import jquery-like bundle with side effects', function () {
+		return bundledom('test/fixtures/fakejquery.html', {
+			concatenate: true
+		}).then(function (data) {
+			data.js.should.containEql("window.$ = jQuery");
+			data.js.should.containEql("window.$()");
+		});
+	});
 
 	it('should bundle remote script', function () {
 		this.timeout(10000);
