@@ -254,6 +254,8 @@ function processScripts(doc, opts, data) {
 	const entries = [];
 	const legacies = [];
 
+	const rollupModulesResolver = rollupModulesResolverCreate(opts);
+
 
 	allScripts.forEach(function (node, i) {
 		const src = node.getAttribute('src');
@@ -268,17 +270,27 @@ function processScripts(doc, opts, data) {
 				removeNodeAndSpaceBefore(node);
 				return;
 			}
-			data.scripts.push(src);
+
 			const path = src.startsWith('/')
 				? Path.join(opts.root, src)
 				: Path.join(docRoot, src);
 			if (esm) {
 				entries.push({ name, path });
+				data.scripts.push(src);
 			} else if (filterRemotes(src, opts.remotes) == 1) {
+				data.scripts.push(src);
 				legacies.push(got((src.startsWith('//') ? "https:" : "") + src).then(function (response) {
 					return response.body.toString();
 				}));
+			} else if (rollupModulesResolver) {
+				const level = Path.relative(opts.basepath, opts.root);
+				legacies.push(rollupModulesResolver.resolveId(Path.join(level, src), opts.basepath).then(solved => {
+					if (!solved) solved = path;
+					data.scripts.push(Path.relative(opts.root, solved));
+					return readFile(solved);
+				}));
 			} else {
+				data.scripts.push(path);
 				legacies.push(readFile(path));
 			}
 		} else if (node.textContent) {
@@ -318,7 +330,7 @@ function processScripts(doc, opts, data) {
 			context: 'window',
 			plugins: [
 				rollupVirtual(virtuals),
-				rollupModulesPrefix(opts),
+				rollupModulesResolver,
 				rollupResolve.nodeResolve({ browser: true }),
 				rollupCommonjs(),
 				rollupBabel.babel(opts.babel),
@@ -589,7 +601,7 @@ function writeFile(path, data) {
 	});
 }
 
-function rollupModulesPrefix({ modules, root }) {
+function rollupModulesResolverCreate({ modules, root }) {
 	if (!modules) return;
 	const resolver = new Resolver({
 		node_path: 'node_modules',

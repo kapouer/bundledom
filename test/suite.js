@@ -90,6 +90,18 @@ describe("test suite", function () {
 		});
 	});
 
+	it('should support legacy-resolved modules', function () {
+		return bundledom('test/fixtures/legacy.html', {
+			root: "test/fixtures",
+			modules: '/modules',
+			exclude: [],
+			concatenate: true
+		}).then(function (data) {
+			data.scripts.should.eql(['mod.js', '../../node_modules/@ungap/promise-all-settled/esm/index.js', 'depmod.js']);
+			data.should.have.property('js');
+		});
+	});
+
 	it('should ignore a script', function () {
 		return bundledom('test/fixtures/exclude.html', {
 			ignore: ['b.js']
